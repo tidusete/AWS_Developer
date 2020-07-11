@@ -1,8 +1,5 @@
 ---
-
-
 #AWS Developer Certification Notes
-
 ##Table of Contets
 1. AWS Fundamentals: IAM + EC2
 2. AWS Fundamentals: ELB + ASG
@@ -13,7 +10,6 @@
 7. Amazon S3 Introduction
 8. loreipsum
 9. loreipsum
-
 ##AWS Fundamentals: IAM + EC2
 ####AWS Regions
 AWS has Regions all around the world. -> *ap-southeast-2*
