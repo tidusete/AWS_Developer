@@ -2,7 +2,7 @@
 # AWS Developer Certification Notes
 
 Table of Contets  
-[1. IAM + Security](#iam--securityid1)  
+[1. IAM + Security](#iam--security)  
 [2. EC2 + ENI](#id2)  
 [3. ELB](#id3)  
 [4. ASG](#id4)  
