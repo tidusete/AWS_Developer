@@ -2,19 +2,19 @@
 # AWS Developer Certification Notes
 
 Table of Contets  
-[1. IAM + Security](#id1)
-[2. EC2 + ENI](#id2)
-[3. ELB](#id3)
-[4. ASG](#id4)
-3. ECS2 Storage:  EBS & EFS
-4. RDS + Aurora + ElastiCache
-5. Route 53
-6. VPC Fundamentals
-7. Amazon S3 Introduction
-8. loreipsum
-9. loreipsum
+[1. IAM + Security](#id1)  
+[2. EC2 + ENI](#id2)  
+[3. ELB](#id3)  
+[4. ASG](#id4)  
+3. ECS2 Storage:  EBS & EFS  
+4. RDS + Aurora + ElastiCache  
+5. Route 53  
+6. VPC Fundamentals  
+7. Amazon S3 Introduction  
+8. loreipsum  
+9. loreipsum  
 
-### IAM + Security {#id1}
+### [IAM + Security]{#id1}
 
 #### AWS Regions
 AWS has Regions all around the world. -> *eu-west-1*  
