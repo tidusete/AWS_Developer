@@ -2,7 +2,7 @@
 # AWS Developer Certification Notes
 
 Table of Contets  
-[1. IAM + Security](#id1)  
+[1. IAM + Security](#iam--securityid1)  
 [2. EC2 + ENI](#id2)  
 [3. ELB](#id3)  
 [4. ASG](#id4)  
@@ -14,7 +14,7 @@ Table of Contets
 8. loreipsum  
 9. loreipsum  
 
-### [IAM + Security]{#id1}
+### IAM + Security
 
 #### AWS Regions
 AWS has Regions all around the world. -> *eu-west-1*  
