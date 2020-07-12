@@ -1,7 +1,7 @@
 
 # AWS Developer Certification Notes
----
-Table of Contets
+
+Table of Contets  
 [1. IAM + Security](#id1)
 [2. EC2 + ENI](#id2)
 [3. ELB](#id3)
@@ -75,7 +75,7 @@ Mainly consist in:
 
 *Mac/Linux must remember to restrict your .pem key using chmod 400
 
-####EC2 User Data
+#### EC2 User Data
 Specified camp from building Instances that let u write bootstrap commands.
 * The script only run once at the instrance first start.
 * EC2 user data is used to automate boot tasks.
