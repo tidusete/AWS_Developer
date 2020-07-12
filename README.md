@@ -3,9 +3,9 @@
 
 Table of Contets  
 [1. IAM + Security](#iam--security)  
-[2. EC2 + ENI](#id2)  
-[3. ELB](#id3)  
-[4. ASG](#id4)  
+[2. EC2 + ENI](#ec2--eni)  
+[3. ELB](#elastic-load-balancers)  
+[4. ASG](#auto-scaling-group)  
 3. ECS2 Storage:  EBS & EFS  
 4. RDS + Aurora + ElastiCache  
 5. Route 53  
@@ -59,7 +59,7 @@ Security Groups knowledge:
 * Elastic IP:
     * Can bind the instance to an Elastic IP to have always the same IP.
 ---
-### EC2 + ENI {#id2}
+### EC2 + ENI
 EC2 is Elastic Compute Cloud
 Mainly consist in:
 * Renting Virtual machines
@@ -123,7 +123,7 @@ Useful for failover to EC2 instances.
 
 ---
 
-### Elastic Load Balancers {#id3}
+### Elastic Load Balancers
 Elastic Load balance wants to powerful the AWS high availability characteristic.
 Load Balancer functions:
 * Spread load across configured instances
@@ -192,7 +192,7 @@ Load Balancer Attributes
         * Target Group: Deregistration Delay (For ALB & NLB)
         * Time to complete "in-flight requests" while the instance is de-registering or unhealthy
     
-### Auto Scaling Group {#id4}
+### Auto Scaling Group
 Before start, we have to underestand the main concepts of auto scaling:
 * Vertical Scalability:
     * Increase the size of the instance
