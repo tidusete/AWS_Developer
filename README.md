@@ -228,8 +228,150 @@ Before start, we have to underestand the main concepts of auto scaling:
 
 
 
+---
+### Advanced S3
+##### S3 MFA-Delete
+Force MFA b4 important operations on S3
+* To use MFA-Delete -> enable versioning on the S3 Bucket
+* Need MFA:
+    * Permanent delete an object version
+    * Suspend versioning on the bucket
+* No need MFA:
+    * enable versioning
+    * listing deleted versions
+* Onle the bucket owner **(root account)** can enable/disable MFA-Delete
+* MFA-Delete can only be enabled using the CLI  
 
+##### S3 Default Encruption
+To use traffic encrypted on S3 u have the default encryption option
+Bueckt policies are evaluated before "Default encryption"
+##### S3 Access Logs
+For audit purpose. Any request to a s3 will be logged into another s3 bucket.
+##### S3 Replication (CRR & SRR)
+Must enable versioning in source and destination
+Cross Region Replication (CRR)
+Same Region Replication (SRR)
+* Bucket can be in different acc
+* Copying is asynchronous
+* Must give proper IAM permissions to S3
+* Only new objects are replicated
 
+Delete operations:
+* if u delete withour a version ID, it adds a delete marker, not replicated
+* if u delete with a version ID, it deletes in the source, not replicated
+
+No chaining replication
+* A->B
+* B->C
+* A content never arrives to C.
+
+##### S3 pre-signed URLs
+Can generate pre-signed URLs using SDK or CLI
+* For downloads
+* For uploads
+* Default time of 3600 Seconds
+* Users given a pre-signed URL inherit the permission of the person who generated the URL for GET/PUT
+
+##### S3 Storage Classes
+* Amazon S3 Standard - General Purpose
+    * High durability 99,9p9% across multiple AZ
+    * Availability 99.99%
+    * sustain 2 concurrent facility failures
+    * Use:Big data analytics, mobile & gaming applications, content distribution
+* Amazon S3 Standard - Infrequent Access (IA)
+    * Suitable for data that is les frequently accessed.
+    * High durability 99,9p9% across multiple AZ
+    * Availability 99.9%
+    * Low cost compared to amazon S3 Standard
+    * Sustain 2 concurrent facility failures
+    * Use:Disaster recovery, backups
+* Amazon S3 One Zone-Infrequent Access
+    * Same as IA but single AZ
+     * High durability 99,9p9% single AZ
+     * 99.5% Availabilitty
+     * low latency and high throughput performance
+     * Supports SSL for data at transit and encryption at rest
+     * Low Cost compared to IA
+     * Use: Secondary backup copies, storing data you can recreate.    
+* Amazon S3 Intelligent Tiering
+    * Low latency and high performance of S3 standard
+    * Small monthly monitoring and auto-tiering fee
+    * Automatically moves objects between two access tiers based on access paterns
+    * Designed for durability 99,9p9 across multiple Availability Zones
+    * Designed for 99.9% availability 
+* Amazon S3 Glacier
+    * Low cost object storage for archiving/backup
+    * Data is retained for the longer term _10 years_
+    * Alternative to on-premise magnetic tape storage
+    * Average annual durability 99.9p9
+    * Cost per storage per month + retrieval cost
+    * Each item in Glacier is called "Archive" _up to 40TB_
+    * Archives are stored in "Vaults"
+    * Retrieval options (_Minum storage duration **90 days**_):
+        * Expedited (_1-5 minutes_)
+        * Standard (_3-5 hours_)
+        * Bulk (_5 to 12 hours_)
+
+    
+* Amazon S3 Glacier Deep Archive (Minum 180 days - cheaper)
+    * Standard (_12 hours_)
+    * Bulk (_48 hours_)
+
+##### S3 Moving between storage classes
+You can transition S3 storage classes to anothers:  
+Infrequently accessed object -> Standard_IA  
+For archieve objects -> Glacier or Deep_Archive  
+Lifecycle Rules:
+* Transition actions - When objects are transitioned to another storage class
+    * Move objects to Standard IA class 60 days after creation
+    * Move to gGlacier for archiving after 6 months
+* Expiration actions - Configure objects to expire (_delete_) after some time
+    * Acess log files can be set to delete after a 365 days
+    * Can be used to delete old version of files (if versioning is enabled)
+    * Can be used to delete incomplete multi-part upload
+* Rules can be created for a certain prefix (ex  s3://mybucket/mp3/*)
+* Rules can be created for certain objects tags (ex - Department: Finance)
+
+##### S3 Performance
+Amazon S3 automatically scales to gith request rates.
+* Performance:
+    * Latency 100-200ms
+    * 3500 PUT/COPY/POST/DELETE req x sec x prefix in bucket
+    * 5500 GET/HEAD req x sec x prefix in bucket
+    * There are no limits to the number of prefixes in a bucket.
+* KMS Limitation
+    * Upload -> Call GenerateDataKey KMS API
+    * Download -> Call Decrypt KMS API
+    * Count towards the KMS quota per second (_5500, 10000, 30000 req/s_)
+    * Can not increase request a quiota increase for KMS
+* Multi-Part upload:
+    * Recommended for files > 100MB
+    * Must for > 5GB fles
+    * Parallelize uploads
+* S3 Transfer Acceleration (_Upload only_)
+    * Increase transfer speed by transferring file to an aws edge location which will forward the data to the S3 bucket in the target regions
+    * Compatible with multi-part upload
+
+##### S3 Event notifications
+* SNS -> Mail
+* SQS -> Queue
+* Lambda Function -> Execute Code
+
+##### AWS Athena
+* Serverless service to perform analytics againts S3 files
+* Uses SQL language to query the files
+* Has a JDBC/ODBC dirver
+* Charged per query and amount of data scanned
+* Supports CSV,JSON, ORC, Avro, and Parquet
+* Use: Business intelligence/Analytics/reporting/VPC Flow Logs, ELB Logs, CloudTrail trails...
+##### S3 Object Lock & Glacier Vault Lock
+* S3 Object Lock
+    * Adopt a WORM model
+    * Block an object version deletion for a specified amount of time
+* Glacier Vault Lock
+    * Adopt a Worm model
+    * Lock the policy for future edits
+    * Helpful for compliance and data retention
 
 
 
