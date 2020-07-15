@@ -373,5 +373,36 @@ Amazon S3 automatically scales to gith request rates.
     * Lock the policy for future edits
     * Helpful for compliance and data retention
 
-
-
+### AWS CloudFront
+Content Delivery Network (CDN)
+* Improves read performances -> content is cached at the edge
+* 216 Poin of Presence globally
+* DDoS protection, integration with Shiedl, AWS Web Application Firewall
+* Can expose external HTTPS and can talk to internal HTTPS Backends
+##### S3 bucket
+ * For distributing files and caching them at the edge
+ * Enhanced security with CloudFron Origin Access Identity (OAI)
+ * CloudFront can be used as an ingress (to upload files to S3)
+##### Custom Origin (HTTP)
+* Application Load Balancer
+* EC2 instance
+* S3 Website (must first enable the bucket as a static S3 website)
+* Any HTTP Backend you want
+##### CloudFront vs S3 Cross Region Replication
+* CloudFront:
+    * Global Edge network
+    * Files are cached for a TTL
+    * Great for static content that must be available everywhere
+* S3 Cross Region Replication:
+    * Must be setup for each region you want replication to happen
+    * Files are updated in near real-time
+##### CloudFront Caching
+* Cache based on
+    * Headers
+    * Session Cookies
+    * Query String Parameters
+* The cache lives at each CloudFront Edge Location
+* You want to maximize the cache hit rate
+* Control the TTL
+* You can invalidate part of the cache using the CreateInvalidation API
+* Invalidating objects removes them from CloudFront edge caches (Interesting)
