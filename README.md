@@ -406,3 +406,31 @@ Content Delivery Network (CDN)
 * Control the TTL
 * You can invalidate part of the cache using the CreateInvalidation API
 * Invalidating objects removes them from CloudFront edge caches (Interesting)
+##### CloudFront Signed URL
+* You want to distribute paid shared content to premium users over the world
+* We can use CloudFront Signed URL/Cookie:
+    * Includes URL expiration
+    * Includes IP ranges to access the data from
+    * Trusted signers (which aws accounts can create signed URLs)
+* How long should the URL be valid for?
+    * Shared content (movie,music): make it short
+    * Private content (private to the user): u can make it last for yearys
+* Signed URL **=>** acess to individual files (one signed URL per file)
+* Signed Cookies **=>** access to multiple files (one signed cookie for many files)
+##### CloudFront Signed URL vs S3 Pre-Signed URL
+* CloudFront Signed URL:
+    * Allow access to a path. no matter the origin.
+    * Account wide key-pair, only the root can manage it
+    * can filter by IP, path, date, expiration
+    * Can leverage caching features
+* S3 Pre-Signed URL:
+    * Issue a request as the person who pre-signed the URL
+    * Uses the IAM key of the signing IAM principal
+    * Limited lifetime
+
+### ECs, ECR & Fargate
+###### Docker
+All we know what is docker.
+* Public -> Docker hub
+* Private -> Amaozn ECR (Elastic Container Registry)
+Resources are shard with the host
