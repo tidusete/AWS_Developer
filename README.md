@@ -433,4 +433,35 @@ Content Delivery Network (CDN)
 All we know what is docker.
 * Public -> Docker hub
 * Private -> Amaozn ECR (Elastic Container Registry)
+    * Access is controlled through IAM
+    * AWS CLI v1 login command -> **$**(aws ecr get-login --no-include-email --region eu-west-1)
+    * AWS CLI v2 login command aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 123456789.dkr.ecr.eu-west-1.amazonaws.com
+    * Docker Push 1234567890.dkr.ecr.eu-west-1.amazonaws.com/demo:latest
+    * Docker Pull 1234567890.dkr.ecr.eu-west-1.amazonaws.com/demo:latest
 Resources are shard with the host
+##### ECS Cluster Overview
+ECS -> Elastic Containter Service
+* ECS CLuster are logical grouping of EC2 Instances
+* EC2 instances run the ECS agent
+* ECS agents register the instance to the ECS cluster
+* EC2 instances run a special AMI made for ECS.
+Like kubernetes
+
+##### Practice
+Important file /etc/ecs/ecs.config
+##### ECS Task Definitions
+Task definitions are metadata in JSON. Tells ECS how to run a Docker Container.
+* Contains:
+    * Image Name
+    * Port Binding for Container and Host
+    * Memory and CPU required
+    * Environment variables
+    * Networking information
+##### ECS Services
+ECS Services help define how many task should run and how they should be run.
+* Ensure that the number of tasks desired is runing across our fleet of EC2 instances
+* Can be linked to ELB / NLB / ALB if needed
+##### Fargate
+Like ECS but is serverless.
+Amazon do it all
+u only have to configure the container. (Like Cloud but with containers)
