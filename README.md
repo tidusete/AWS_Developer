@@ -699,3 +699,201 @@ Ether provide:
   * Custom Platform vs Custom Image (AMI):
     * Custom Image is to tweak an **existing** Beanstalk platform (Python, Node.js, Java)
     * Custom Platform is to create **an entirely new** Beanstalk Platform
+### AWS CICD:
+##### Technology Stack for CICD
+|  Code | Build   | Test   | Deploy   |  Provision |
+|---|---|---|---|---|
+| AWS CodeCommit  | AWS CodeBuild  |AWS CodeBuild   | AWS Elastic Beanstalk  | AWS Elastic Beanstalk |
+|   Github Or 3rd party code repository| Jenkins CI Or 3rd party CI Servers   |   Jenkins CI Or 3rd party CI Servers | AWS CodeDeploy  | User Managed EC2 Instances Fleet (CloudFOrmation)  |
+
+All integrated with Orchestrate: **AWS CodePipeline**
+#### CodeCommit
+##### CodeCommit Overview
+* **Version Control** -> ability to underestand the various changes that happened to the code over time.
+* Enabled using a version control system such as Git
+* Git repository can live on one's machine or central online repository
+* Benefits are:
+  * Collaborate with other dev
+  * Backed-up code
+  * Viewable and auditable
+
+##### CodeCommit AWS
+* Private Git repositories
+* No size limit on repositories (scale seamlessly)
+* Fully managed, highly available
+* Code Only in AWS Cloud Account
+* Secure (encrypted, access control, etc)
+* Integrated with jenkins / CodeBuild / Other CI Tools
+
+##### CodeCommit Security
+* Interactions are done using Git
+* Authentication in Git:
+  * SSH Keys: AWS Users can configure SSH keys in their IAM Console
+  * HTTPS: Done through the AWS CLI Authentication helper or Generating HTTPS credentials
+  * MFA can be enabled for extra safety
+* Authorization in Git:
+  * IAM Policies manage user / roles rights to repositories
+* Encryption:
+  * Repositories are automatically encrypted at rest using KMS
+  * Encrypted in transit (can only use HTTPS or SSH - both secure)
+* Cross Account access:
+  * Do not share your SSH keys
+  * Do not share your AWS credentials
+  * Use IAM Role in your AWS Account and use AWS STS (with AssumeRole API)
+
+##### CodeCommit Notifications
+You can trigger notifications in CodeCommit using **AWS SNS** (Simple Notification Servie) or **AWS Lambda** or **AWS CLoudWatch Event Rules**
+* Use Case SNS /AWS Lambda:
+  * Deletion of branches
+  * Trigger for pushes in master branch
+  * Notify external Build System
+  * Trigger AWS Lambda function to perform codebase analysis
+* Use cases for CLoudWatch Event Rules:
+  * Trigger for pull request updates
+  * Commit comment events
+  * CloudWatch Event Rules goes into an SNS topic
+
+#### CodePipeline
+##### CodePipeline Overview
+* Continuous delivery
+* Visual workflow
+* Source: GitHub / CodeCommit / Amazon S3
+* Build: CodeBuild / Jenkins /etc ...
+* Load Testing: 3 party tools
+* Deploy: AWS CodeDeploy / Beanstalk / CloudFormation / ECS ...
+* Made of stages:
+  * Each stage can have squential actions and / or parallel actions
+  * Stage examples: Build / Test / Deploy / Load Test / etc ...
+  * Manual approval can be defined at any stage
+
+##### CodePipeline Artifacts
+
+Each pipeline stage can create "artifacts", artifacts are passed stored in Amazon S3 and passed on to the next stage.
+
+_Each stage will output artifacts to the next stage_
+
+##### CodePipeline Troubleshooting
+
+CodePipeline state changes happen in **AWS CloudWatch Events**, which can in return create SNS notifications.
+  * Create events for failed pipelines
+  * Create events for cancelled stages  
+
+If CodePipeline fails a stage, the pipeline will stop and u will get the info in the console
+
+AWS CloudTrail can be used to audit AWS API calls
+Pipeline have to be attached an IAM Service Role to do some actions
+
+#### CodeBuild
+##### CodeBuild Overview 
+* Fully managed build service
+* Alternative to other build tools like Jenkins
+* Continuous scaling (no servers to manage or provision - no build queue)
+* Pay for usage: the time it takes to complete the builds
+* Leverages Docker under the hood for reproducible builds
+* Possibility to extend capabilities leveraging our own base Docker images
+* Secure: Integration with KMS for encryption of build artifacts, IAM for build permissions, and VPC for network security, CloudTrail for API calls loggin
+##### CodeBuild Properties
+* Source Code from GitHub / CodeCommit / CodePipeline / S3...
+* Build instructions can be defined in code (buildspec.yml file)
+* Output logs to Amazon S3 & AWS CloudWatch Logs
+* Metrics to monitor CodeBUilds statistics
+* Use CloudWatch Alarms to detect failed builds and trigger notifications
+* CloudWatch Events / AWS Lambda as a Glue
+* SNS notifications
+* Ability to reproduce CodeBuild locally to troubleshoot in case of errors
+* Builds can be defined within CodePipeline or CodeBuild itself
+##### CodeBuild BuildSpec
+* **buildspec.yml** file must be at the **root** of your code
+* Define environment variables:
+  * Plaintext variables
+  * Secure secrets: use SSM Parameter store
+* Phases (specify commands to run):
+  * Install: install dependencies you may need for your build
+  * Pre build: final commands to execute before build
+  * **Build: Actual build commands**
+  * Post build: finishing touches (zip output for example)
+* Artifacts: What to upload to S3 (encrypted with KMS)
+* Cache: Files to cache (usually dependencies) to S3 for future build speedup
+##### CodeBuild Local Build
+* In case of need of deep troubleshooting beyond logs...
+* You can run CodeBuild locally on tour desktop (after installing Docker)
+* For this, leverage the CodeBuild Agent
+##### CodeBuild in VPC
+* By default, your CodeBuild containers are launched outside your VPC
+* Therefore, by default it cannot access resources in a VPC
+* You can specify a VPC configuration:
+  * VPC ID
+  * Subnet IDs
+  * Security Group IDs
+* Then your build can access resources in your VPC (RDS, ElastiCache, EC2, ALB)
+* Use cases: integration test, data query, internal load balancers
+#### CodeDeploy
+##### CodeDeploy overview
+* We want to deploy our applicaiton automatically to many EC2 instances
+* These isntances are not managed by Elastic Beanstalk
+* There are several ways to handle deployments using open source tools (Ansible, Terraform, Chef, Puppet, etc...)
+* We can use the managed Service AWS CodeDeploy
+##### CodeDeploy Steps to make it Work
+* Each EC2 Machine (or On Premise machine) must be running the **CodeDeploy Agent**
+* CodeDeploy sends appspec.yml file
+* Application is pulled from GitHub or S3
+* EC2 will run the deployment instructions
+* CodeDeploy Agent will report of success / failure of deployment on the instance
+##### CodeDeploy Other
+* EC2 instances are grouped by deployment group (dev / test / prod)
+* Lots of flexibility to define any kind of deployments
+* CodeDeploy can be chained into CodePipeline and use artifacts from there
+* CodeDeploy can re-use existing setup tools, works with any application, auto scaling integraiton
+* Note: Blue / Green only works with EC2 instances (not on premise)
+* Support for AWS Lambda deployments (we'll see this later)
+* CodeDeploy does not provision resources
+##### CodeDeploy Primary Components
+* **Aplication** -> unique name
+* **Compute platform** ->  EC2/On-Premise or Lambda
+* **Deployment configuration** ->  Deployment rules for success / failures
+  * EC2/On-Premise: you can specify the minimum number of healthy instances for the deployment.
+  * AWS Lambda specify how traffic is routed to your updated Lambda function version.
+* **Deployment group** -> group of tagged instances (allows to deploy gradually)
+* **Deployment Type** -> In-place deployment of Blue/green deployment
+* **IAM instance profile** -> need to give EC2 the permissions to pull from S3 / GitHub
+* **Application Revision** -> application code + appsec.yml file
+* **Service role** -> Role for CodeDeploy to perform what it needs
+* **Target revision** -> Target deployment application version
+##### CodeDeploy AppSpec
+* File section -> How to source and copy from S3 / GitHub to filesystem
+* Hooks -> set of instructions to do to deploy the new verion (hooks can have timeouts)
+* The order of hooks:
+  * **ApplicationStop**
+  * **DownloadBundle**
+  * **BeforeInstall**
+  * **AfterInstall**
+  * **ApplicationStart**
+  * **ValidateService** *really important*
+
+##### CodeDeploy Deployment Config
+* Configs:
+  * On a time -> one instance at a time, if one instance fails the deployment stops
+  * Half at a time 50%
+  * All at once quick but no healthy host, downtime. *Good for dev*
+  * Custom min healhty host 75%
+* Failures:
+  * Instances stay in "failed state"
+  * New deployments will first be deployed to "failed state" instance
+  * To rollback: redeploy old deployment or enable automated rollback for failures
+* Deployment Targets:
+  * Set of EC2 isntances with tags
+  * Directly to an ASG
+  * Mix of ASG / Tags so you can build deployment segments
+  * Customization in scripts with DEPLOYMENT_GROUP_NAME environment variables
+##### CodeDeploy to EC2
+* Define how to deploy the application using appspec.yml + deployment strategy
+* Will do in-place update to your fleet of EC2 isntances
+* Can use hooks to verify the deployment after each deployment phase
+##### CodeDeploy to ASG
+* In place updates:
+  * Updates current existing EC2 instances
+  * Instances newly created by an ASG will aslo get automated deployments
+* Blue/green deployment:
+  * A new auto-scaling group is created (settings are copied)
+  * Choose how long to keep the old instances
+  ******Revisar dema millor******
