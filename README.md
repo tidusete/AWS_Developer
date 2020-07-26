@@ -1011,6 +1011,12 @@ Resources are the core of your CloudFormation Template
   * Helpful when components must be re-used
   * Ex: re-use how to properly configure an Application Load Balancer
   * The nested stack only is important to the higher level stack (it's not shared)
+##### CloudFormation StackSets 
+* Create, update, or delete stacks acorss **multiple accounts and regions** with a single operation 
+* Administrator account to create StackSets
+* Trusted accounts to create, update, delete stack instances from StackSets
+* When you update a stack set, all associated stack instances are update throughout all accounts and regions.
+
 
 
 
