@@ -896,4 +896,122 @@ Pipeline have to be attached an IAM Service Role to do some actions
 * Blue/green deployment:
   * A new auto-scaling group is created (settings are copied)
   * Choose how long to keep the old instances
-  ******Revisar dema millor******
+  * Must use an ELB
+##### CodeDeploy Rollbacks
+You can specify the following rollback options:
+  * Roll back when a deployment fails
+  * Roll back when alarm thresholds are met
+  * Disable rollbacks - Do not perform rollbacks for this deployment
+_If a roll back happens, CodeDeploy redeploys the last known good revision as a new deployment_
+##### CodeStar
+CodeStar is an integrated solution that regroups: GitHub, CodeCommit, CodeBuild, CodeDeploy, CloudFormation, CodePipeline, CloudWatch
+* Helps quickly create "CICD-ready" projects for EC2, Lambda, Beanstalk
+* Supported languages: C#, Go, HTML 5, Java, Node.js, PHP, Pyhton, Ruby
+* Issue tracking integration: JIRA / GitHub Issues
+* Ability to integrate with Cloud9 to obtain a web IDE
+* One dashboard to view all your components
+* Free service, pay only for the underlying usage of other services
+* Limited Customization
+### AWS CloudFormation
+##### What is CloudFormation
+CloudFormation is a declarative way of outlining your AWS Infrastrcture.
+Example of CloufRomation template:
+  * I want a security group
+  * I want two EC2 machines using this security group
+  * I want two Elastic IPs for there EC2 machines
+  * I want an S3 bucket
+  * I want a load balancer in fron to these machones
+CloudFormation creates those for u, in the **right order** with the **exact configuration**
+##### Benefits of AWS Cloud Formation
+* Infrastructure as code
+  * No resources are manually created, which is excellent for contorl
+  * The code can be version controlled for example using git
+  * Changes to the intrastructure are reviewed through code
+* Code
+  * Each resources withing the stack is stagged with an identifier so you can easily see how much a stack cost you
+  * You can estimate the costs of your reources using the CloudFormation template
+  * Saving strategy: In Dev, you could automation deletion of templates at 5PM and recreated at 8 AM, safely
+* Productivity
+  * Ability to destroy and re-create an infrastructure on the cloud on the fly
+  * Automated generation of Diagram for your templates
+  * Declarative programming (no need to figure out ordering and orchestration)
+* Separation of concern: create many stacks for many apps, and many layers.
+  * VPC stacks
+  * Network stacks
+  * App stacks
+##### How CloudFormation Works
+Templates have to be uploaded in S3 and then referenced in CloudFormation
+* Update template -> we can't edit previous ones. We have to reupload a new verions of the template to aws
+* Stacks are identified by a name
+* Deleting a stack deletes every single artifact that was created by CloudFormation
+##### Deploying CloudFormation templates
+* Manual way:
+  * editing templates in the CLoudFormation Designer
+  * Using the console to input paraments, etc
+* Automated way:
+  * Editing templates in a YAML file
+  * Using the AWS CLI to deploy the templates
+  * Recommended way when you fully want to automate your flow
+##### CloudFormation Resources
+Resources are the core of your CloudFormation Template
+* They represent the different AWS components that will be created and configured
+* Resources are declared and can reference each other
+* AWS figures out creation, updates and deletes of resources for us
+* There are over 224 types of resources
+* Reosurces types identifiers are of the form:
+  * **AWS::aws-product-name::data-type-name**
+##### CloudFormation Parameters
+* Parameters are a way to provide inputs to your AWS CloudFormation template
+* They are important to know about if:
+  * You want to reuse your templates across the company
+  * Some inputs can not be determined ahead of time
+  * Parameters are extremly powerful, controlled, and can prevent erros from happening in your templaters thanks to types.
+* The **Fn::Ref** function can be leveraged to reference parameters
+* Parameters can be used anywhere in a template
+* The shorthand for this is YAML is !Ref
+##### CloudFormation Mappings
+* Mappings are fixed variables within your CloudFormation Template.
+* They're very handy to differentiate between different environments, regions, AMI Types, etc...
+* All the values are hardcoded within the template
+* Mappings are great when you know in advance all the values that can be taken and that they can be deduced from variables such as:
+  * Regions
+  * Availability Zone
+  * AWS Account
+  * Environment
+  ...
+* They allow safer control over the template
+* Use parameters when the values are really user specific.
+* Accessing Mapping Values:
+  * We use **Fn::FindInMap** to return a named value from a specific key
+  * **!FindInMap [MapName, TopLevelKey, SecondLevelKey]**
+##### CloudFormation Rollbacks
+* Stack Creation Fails:
+  * Default: everything rolls back (gets delelted). We can look at the log
+  * Option to disable rollback and troubleshoot what happened-
+* Stack Update Fails:
+  * The stack automatically rolls bakc to the previous known working state
+  * Ability to see in the log what happened and error messages
+##### CloudFormation ChangeSets
+* when you update a sstack, you need to know what hanges before it happens for greater confidence
+* ChangeSets won't say if the update will be successful
+##### CloudFormation Nested Stacks
+* Nested stacks are stacks as part of other stacks
+* They allow you to isolate repeated patterns  / common components in separate stacks and call them from other stacks
+* Example:
+  * Load Balancer configuration that is re-used
+  * Security Group that is re-used
+* Nested stacks are considered best practice
+* To update a nested stack, always update the parent (root stack)
+##### CloudFormation Corrs vs Nested Stack
+* Cross Stacks
+  * Helpful when stacks have different lifecycles
+  * Use Outputs Export and Fn::ImportValue
+  * When you need to pass export values to many stacks (VPC id, etc...)
+* Nested Stacks
+  * Helpful when components must be re-used
+  * Ex: re-use how to properly configure an Application Load Balancer
+  * The nested stack only is important to the higher level stack (it's not shared)
+
+
+
+
