@@ -1086,6 +1086,7 @@ Resources are the core of your CloudFormation Template
   * Log groups: arbitrary name, usually representing an application
   * Log stream: instances withing application / log files / containers
 * Can define log expiration policies (never expire, 30 days, etc...)
+* Expire after 7 days by default 
 * Using the AWS CLI we can tail CloudWatch logs
 * To send logs to CloudWatch, make sure IAM permission are correct
 * Security: encryption of logs using KMS at the group level
@@ -1259,3 +1260,193 @@ Policy name is **AWSXrayReadOnlyAccess**
   * Automated Trace Analysiss & Central Service Map Visualitzation
   * Latency, Errors and Fault analysis
   * Request tracking across distributed systems
+### AWS Integration & Messagin
+When we start deploying multiple applications, they will inevitably need to communicate with one another  
+There are two patterns of application communication:
+* Synchronous communication (Application to application)
+* Asynchronous / Event Based (Application to queue to application)
+  
+Synchronous between applications can be problematic if there are sudden spikes of traffic
+* What happen if u need to suddenly encode 1000 videos but usulally it's 10?
+  
+In that case, it's better to **decouple** your applications
+  * using SQS: queue model
+  * using SNS: pub/sub model
+  * using Kinesis: real-time streaming model
+* These services can scale independenlty from our application
+
+#### AWS SQS
+##### AWS SQS - Standard Queue
+* Oldest offering (over 10 years old)
+* Fully managed
+* Scales from 1 message per second to 10.000 per second
+* Default retention of messages: 4 days, maximum of 14 days
+* No limit to how many messages can be in the queue
+* Low latency (<10 ms on publish and receive)
+* Horizontal scaling in terms of number of consumers
+* Can have duplicate messages (at least once delivery, occasionally)
+* Can have out of order messages (best effort ordering)
+* Limitation of 256KB per message sent
+##### AWS SQS - Delay Queue
+* Delay a message (consumers don't see it immediately) up to 15 minutes
+* Default is 0 seconds (message is available right away)
+* Can set a defualt at queue level
+* Can override the default using the DelaySeconds parameter
+##### AWS SQS - Producing Messages
+* Define Body (up to 256kb)
+* Add message attributes (metadata - optional)
+* Provide Delay Delivery (optional)
+* Get back
+  * Message identifier
+  * MD5 hash of the body
+##### AWS SQS - Consuming Messages
+Consumers Polls SQS for messages
+* Receive up to 10 messages at a time
+* Process the message within the visibility timeout
+* Delete the message using the message ID & receipt handle
+##### AWS SQS - Visibility timeout
+When a consumer polls a message from a queue, the message is "invisible" to other consumers for a defined period... **The Visibility Timeout**
+* Set between 0 seconds and 12 hours (default 30 seconds)
+* If too high and consumer fails to process the message. We must **wait long time** until we can process the message again.
+* If too low and consumers needs more time to process the message, **another consumer will receive the message** and the msg will be processed more that once
+* **ChangeMessageVisiblity** API to change the visibility while processing a message
+* **DeleteMessage** API to tell SQS the message was successfully processed
+##### AWS SQS - Dead Letter Queue
+* If a consumer fails to process a message within the Visibility Timeout... the message goes back to the queue.
+* We can set a **threshold** of how many times a message can go back to the queue - it's called a "**redrive policy**"
+* After the threshold is exceeded, the message goes into a dead letter queue (DLQ)
+* We have to create a DLQ first and then designate it dead letter queue
+* Make sure to process the messages in the DLQ before they expire
+
+##### AWS SQS - Long Polling
+* When a consumer requests message from the queue, it can optionally "wait" for messages to arrive if there are none in the queue
+* LongPolling decreases the number of PAI calls made to SQS while increasing the efficiency and latency of your application.
+* The wait time can be between 1 sec to 20 sec (Pref 20s)
+* Long Polling is preferable to Short Polling
+* Long polling can be enabled at the queue level or at the API level using **WaitTimeSeconds**
+##### AWS SQS - FIFO Queue
+* Name of the queue must end in .fifo
+* Lower throiughput (up to 3,000 per second with batching, 300/s without)
+* Messages are processed in order by the consumer
+* Messages are sent exaclty once
+* No per message delay (only per queue delay)
+##### AWS FIFO - Features
+* Deduplication: (not send the same message twice)
+  * Provide a **MessageDeduplicationId** with your message
+  * De-duplication interval is 5 minutes
+  * Content based duplicatino: the MessageDeduplicationId is generated as the SHA-256 of the message body (not the attributes)
+
+* Sequencing:
+  * To ensure strict ordering between messages, specify a **MessageGroupId**
+  * Messages with different Group ID may be recived out of order
+  * E.g to order messages for a user, you could use the "user_id" as a group id
+  * Messages with the same Group ID are delivered to one consumer at a time
+##### AWS SQS Extended Client
+* Message size limit is 256KB
+* Using the SQS Extended Client (Java Library) you can send >256KB
+1. Producer send small metadata message to SQS QUeue T=1
+2. Producer also send large message to S3 T=1
+3. Consumer pull metadata from SQS Queue T=2
+4. Consumer knows that have to Retrive large message from S3 and pull it T=3
+
+##### AWS SQS Security
+* Encryption in flight using the HTTPS endpoint
+* Can enable SS· (Server Side Encryption) using KMS
+  * Can set the CMK (Customer Master Key) we want to use
+  * Can set the data key reuse period (between 1 minute and 24 hours)
+    * Lower and KMS API will be used often
+    * Higher and KMS API will be called less
+  * SSE only encrypts the body, not the metadata (message ID, timestamp, attributes)
+* IAM policy must allow usage of SQS
+* SQS queue access policy
+  * Finer grained control over IP
+  * Control over the time the requests come in
+##### AWS SQS Must know API
+* **CreateQueue, DeleteQueue**
+* **Purge Queue**: Delete all the messages in queue
+* **SendMessage**, ReceiveMessage, DeleteMessage
+* **ChangeMessageVisiblity**: change the timeout
+* **Batch APIs** for **SendMessage, DeleteMessage, ChangeMessageVisibility** help decrease your costs
+#### AWS SNS Overview
+If u want to send one message to many receivers u will use SNS Topic.
+Works with the **Publish / Subscrive** strategy
+* The "event producer" only sends message to one SNS topic
+* As many "event receivers" (subscriptions) as we want to listen to the SNS topic notifications
+* Each subscriber to the topic will get all the messages (note: *new feature to filter messages*)
+* Up to 10,000,000 topics limit
+* Subscribers can be:
+  * SQS
+  * HTTP / HTTPS (with delivery retries - how many times)
+  * Lambda
+  * Emails
+  * SMS messages
+  * Mobile Notifications
+#### AWS SNS How to publish
+* Topic Publish (within your AWS Server - using the SDK)
+  * Create a topic
+  * Create a subscription (or many)
+  * Publish to the topic
+* Direct Publish (for mobile apps SDK)
+  * Create a platform application
+  * Create a platform endpoint
+  * Publish to the platform endpoint
+  * Works with Google GCM, Apple APNS, Amazon ADM...
+
+#### AWS SNS + SQS: Fan Out
+* Push once in SNS, receive in many SQS
+* Fully decoupled
+* No data loss
+* Ability to add receivers od data later
+* SQS allows for delayed processing
+* SQS alllows for retries of work
+* May have many workers on one wueue and one worker on the other queue
+
+### AWS Kinesis Overview
+* **Kinesis** is a managed alternative to Apache Kafka
+* Great for application logs, metrics, IoT, clickstreams
+* Great for "real-time" big data
+* Great for streaming processing frameworks (Spark, NiFi, etc...)
+* Data is automatically replicated to 3 AZ
+
+* **Kinesis Streams**: low latency streaming ingest at scale
+* **Kinesis Analytics**: perform real-time analytics on stream using SQL
+* **Kinesis Firehose**: load streams into S3, Redshift, ElasticSearch
+##### AWS Kinesis Stream Overview 
+* Streams are divided in ordered Shards/ Partitions *like roads*
+* Data retentions is 1 day by default, can go up to 7 days
+* Ability to reprocess / replay data
+* Multiple applications can consume the same stream
+* Real-time processing with scale of throughput
+* Once data is inserted in kinesis, it can't be deleted (immutability)
+##### AWS Kinesis Stream Shards
+* One stream is made of many different shards
+* 1MB/s or 1000 messages/s at write PER SHARD
+* 2MB/s at read PER SHARD
+* Billing is per shard provisioned, can have as many shards as you want
+* Batching available or per message calls.
+* The number of shards can evolve over time (reshard / merge)
+* **Records are ordered per shard**
+##### AWS Kinesis API - Put records
+* PutRecord API + Partition key that gets hashed
+* The same key goes to the same partition(helps with ordering for a specific key)
+* Messages sent get a "sequence number"
+* Choose partition key that is highly distributed (helps prevent "hot partition")
+  * user_id if many users
+  * **Not** country_id if 90% of the users are in one country
+* Use Batching with PutRecords to reduce costs and increase throughput
+* **ProvisionedThroughputExceeded** if we go over the limits
+* Can use CLI, AWS SDK, or producer libraries from various frameworks
+##### AWS Kinesis API - Exceptions
+* Provisioned ThroughputExceeded Exceptions
+  * Happens when sending more data (exceeding MB/s or TPS for any shard)
+  * Make sure you don't have a hot shard (such as your patition key is bad and too much data goes to that partition)
+
+* Solution:
+  * Retries with backoff
+  * Increase shards (scaling)
+  * Ensure your partition key is a good one
+##### AWS Kinesis API - Consumers
+* Can use a normal consumer (CLI,SDK,etc...)
+* Can use Kinesis Client Library (in Java, Node, Python, Ruby, .Net)
+  * KCL uses DynamoDB to checkpoint offsets
+  * KCL uses DynamoDB to track other workers and share the work amongst shards
