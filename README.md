@@ -1450,3 +1450,133 @@ Works with the **Publish / Subscrive** strategy
 * Can use Kinesis Client Library (in Java, Node, Python, Ruby, .Net)
   * KCL uses DynamoDB to checkpoint offsets
   * KCL uses DynamoDB to track other workers and share the work amongst shards
+##### AWS Kinesis KCL in Depth
+Kinesis Client Library (KCL) is Java Library that helps read records from a Kinesis Streams with distributed appllications sharing the read workload  
+* Rule: each shard is be read by only one KCL instance
+* Means 4 shards = max 4 KCL instances
+* Means 6 shards = max 6 KCL instances
+* Progress is checkpointed into DynamoDB (need IAM access)
+KCL can run on EC2, Elastic Beanstalk, on Premise Application
+* Records are read in order at the shard level 
+##### AWS Kinesis Security
+* Control access / authorization using IAM policies
+* Encryption in flight using HTTPS endopoints
+* Encryption at rest using KMS
+* Possibility to encrypt / Decrypt data client side (header)
+* VPC Endpoints available for Kinesis to access within VPC
+##### AWS Kinesis Data Analytics
+* Perform real-time analytics on kinesis Stream using SQL
+* Kinesis Data analytics:
+  * Auto Scaling
+  * Managed: no servers to provision
+  * Continuous: real time
+* Pay for actual consumption rate
+* Can create streams out of the real-time queries
+##### AWS Kinesis Firehose
+Fully Managed Service, no administration
+* Neas real time (60 seconds latency)
+* Load data into Redshift / Amazon S3 / ElasticSearch / Splunk
+* Automatic scaling
+* Support many data format (pay for conversion)
+* Pay for the amount of data going through Firehose
+##### SQS vs SNS vs Kinesis
+* SQS
+  * Consumer "pull data"
+  * Data is deleted after being consumed
+  * Can have as many workers (consumers) as we want
+  * No need to provision throughtput
+  * No ordering guarantee (except FIFO queues)
+  * Individual message delay capability
+* SNS
+  * Push data to many subscribers
+  * Up to 10,000,000 subscribers
+  * Data is no persisted (lost if not delivered)
+  * Pub/sub
+  * Up to 100,000 topics
+  * No need to provision throughput
+  * Integrates with SQS for fan-out architecture pattern
+* Kinesis:
+  * Consumers "pull data"
+  * as many consumers as we want
+  * Possibility to replay data
+  * Meant for real-time big data, analytics and ETL
+  * Ordering at the shard level
+  * Data expires after X days
+  * Must provisions throughput
+##### Ordering data into SQS
+  * For SQS stardard, there is no ordering.
+  * For SQS FIFO, if you don't use a **Group ID**, messages are consumed in the order they are sent, **with only one consumer**
+  * You want to scale the number of consumers, but you want messages to be "grouped" when they are related to each other
+  * Then you use a Group ID (similar to Partition Key in Kinesis)
+##### Kinesis vs SQS ordering
+Let's assume 100 trucks, 5 kinesis shards, 1 SQS FIFO
+* Kinesis Data Streams:
+  * On Average you?ll have 20 trucks per shard
+  * Trucks will have their data ordered within each shard
+  * The maximum amount of consumers in parallel we can have is 5
+  * Can receive up to 5 MB/s of data
+* SQS FIFO
+  * You only have one SQS FIFO queue
+  * You will have 100 Group ID
+  * You can have up to 100 Consumers (due to the 100 Group ID)
+  * You have up to 300 messages per second (or 3000 if using batching)
+
+### AWS Serverless: Lambda
+##### Serverless in AWS
+* AWS Lambda
+* DynamoDB
+* AWS Cognito
+* AWS API Gateway
+* Amazon S3
+* AWS SNS & SQS
+* AWS Kinesis Data Firehose
+* Aurora Serverless
+* Step Functions
+* Fargate
+##### AWS Lambda language support
+* Node.js (JavaScript)
+* Python
+* Java (java 8 compatible)
+* C# (.NET Core)
+* Golang
+* C# / Powershell
+* Ruby
+* Custom Runtime API (community supported, example Rust)
+##### AWS Lambda Integrations Main Ones
+* API Gateway - Create API REST
+* Kinesis - data transformations on Fly
+* DynamoDB - create some triggers
+* Amazon S3 -  trigger events 
+* CloudFront
+* CloudWatch Events EventBridge
+* CloudWatch Logs - to stream these logs wherever you want
+* SNS -  react to notifications and your SNS topics
+* SQS to ptrocess messages from your SQS queues
+* Cognito - React whatever 
+* ...
+##### Lambda Synchronous Invocations
+* Synchronous: CLI, SDK, API Gateway, Application Load Balancer
+  * Results is returned right away
+  * Error handling must happen client side (retries, exponential backoff, etc...)
+* User Invoked:
+  * Elastic Load Balancing (Application Load Balancer)
+  * Amazon API Gateway
+  * Amazon CLoudFront (Lambda@Edge)
+  * Amazon S3 Batch
+* Service Invoked:
+  * Amazon Cognito
+  * AWS Step Functions
+* Other Services:
+  * Amazon Lex
+  * Amazon Alexa
+  * Amazon Kinesis Data Firehose
+##### Lambda Integration with ALB
+To expose a Lamda function as an HTTP(S) endpoint ...
+* You can use the Application Load Balacner (or an API Gateway)
+* The Lambda function must be registered in a target group
+##### ALB Multi-Header Values
+ALB can support multi header values (ALB Setting)
+  * **HTTP** -> http://example.com/path?**name**=*foo*&**name**=*bar*
+  * **JSON** -> "queryStringParameters":{"**name**":["*foo*","*bar*"]}  
+  
+When you enable multi-value headers, HTTP headers and query string parameters that are sent with multiple values are shown as arrays withing the AWS Lambda event and response objects 
