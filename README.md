@@ -1580,3 +1580,164 @@ ALB can support multi header values (ALB Setting)
   * **JSON** -> "queryStringParameters":{"**name**":["*foo*","*bar*"]}  
   
 When you enable multi-value headers, HTTP headers and query string parameters that are sent with multiple values are shown as arrays withing the AWS Lambda event and response objects 
+##### Lambda@Edge
+You can use lambda to change CloudFront requests and responses:
+1. After CloudFront Receives a request from a viewer (*viewer request*)
+2. Before CLouFront forwards the querest to the origin (*origin request*)
+3. After CloudFront receives the response from the origin (*origin response*)
+4. Before CloudFront forwards the response to the viewer (*viewer response*)
+##### Lambda@Edge Uses Case
+* Website Security and Privacy
+* Dynamic Web Application at the Edge
+* Search Engine Optimizaiton (SEO)
+* Intelligently Route Across Origins and Data Centers
+* Bot Mitigation at the Edge
+* Real-time Image Transformation
+* A/B Testing
+* User Authentication and Authorization
+* User Prioritization
+* User Tracking and Analytics
+##### Lambda Asynchronous Invocations
+* S3, SNS, CloudWatch Events...
+* The events ar eplaced in an Event Queue
+* Lambda attempts to retry on errors
+  * 3 tries total
+  * 1 minute wait after 1st, then 2 minutes wait
+* Make sure the processing is **idempotent** (in cas of retries)
+* If the function is retried, you will see duplicate logs entries in CloudWatch Logs
+* Can define a DLQ (dead-letter queue) - SNS or SQS - for failed processing (need correct IAM permissions)
+* Asynchronous invocations allow you to speed up the processing if you don't need to wait for the result (ex: you need 1000 files processed)
+##### Lambda Asynchronous Invocations - Services
+* AWS S3
+* AWS SNS
+* AWS CloudWatch Events / EventBridge
+* AWS CodeCommit (CodeCommit Trigger: new branch, new tag, new push)
+* AWS CodePipeline (invoke a Lambda function during the pipeline, Lambda must callback)
+---- other ----
+* Cloud Watch Logs (log processing)
+* Amazon Simple Email Service
+* AWS CloudFormation
+* AWS Config
+* AWS IoT
+* AWS IoT Events
+##### Lambda - Event Source Mapping
+* Kinesis Data Streams
+* SQS & SQS FIFO queue
+* DynamoDB Streams
+* Common denominator:
+  * records need to be polled from the source
+* Your Lambda function is invoked synchronously
+##### Streams & Lambda (Kinesis & DynamoDB)
+* An event source mapping creates an iterator for each shard, processes items in order
+* Start with new items, from the beginning or from timestamp
+* Processed items aren't removed from the stream (other consumers can read them)
+* Low traffic: use batch window to accumulate records before processing
+* You can process multiple batches in parallel
+  * up to 10 batches per shard
+  * in-order processing is still guaranteed for each partition key
+##### Streams & Lambda Error Handling
+By default if your function returns an error, the entire batch is reprocessed until the function succeeds, or the items in the batch expire.
+* To ensure in-order processing, processing for the affected shard is paused until the error is resolved
+* You can configure the event source mapping to:
+  * Discard old events
+  * restrict the number of retires
+  * Split the batch on error (to work around Lambda timeout issues)
+* Discarded events can go to a Destination
+##### Lambda - Events Source Mapping SQS & SQS FIFO
+Event Source Mapping will poll SQS (Long Polling)
+* Specify batch size (1-10 messages)
+* Recommended: Set the queue visibility timeout to 6x the timeout of your Lambda function
+* to use a DLQ
+  * set-up on the SQS queue, not Lambda (DLQ for Lambda is only for async invocations)
+  * Or use a Lambda destination for failures
+##### Queues & Lambda
+Lambda also supports in-order processing for FIFO (first-in, first-out) queues, scaling up to the number of active message groups.
+* For standard queues, items aren't necessarily processed in order.
+* Lambda scales up to process a standard queue as quickly as possible.
+* When an error occurs, batches are returned to the queue as individual items and might be processed in a different grouping than the original batch.
+* Ocassionally, the event source mapping might receive the same item from the queue twice, even if no function error ocurred.
+* Lambda deletes items from the queue after they're processed successfully
+* You can configure the source queue to send items to a dead-letter queue if the can't be processed
+##### Lambda Events Mapping Scaling
+* Kinesis Data Streams & DynamoDB Streams:
+  * One Lambda invocation per stream shard
+  * If you use parallelization, up to 10 batches processed per shard simultaneously
+* SQS standard:
+  * Lambda adds 60 more instances per minute to scale up
+  * Up to 1000 batches of messages processed simultaneously
+* SQS FIFO:
+  * Messages with the same GroupID will be processed in order
+  * The Lambda function scales to the number of active message groups.
+
+##### Lambda - Destinations
+* Since Nov 2019 Can configure to send result to a destination
+* Asynchronous invocations - can define destinations for successful and failed events:
+  * Amazon SQS
+  * Amazon SNS
+  * AWS Lambda
+  * Amazon EventBridge bus
+  * AWS recommends you use destinations instead of DLQ now (but both can be used at the same time)
+  * Event Source mapping: for discarded event batches
+  * Amazon SQS
+  * Amazon SNS
+  * *Note*: you can send events to a DLQ directly from SQS
+
+##### Lambda Execution Role (IAM Role)
+* Grants the Lambda function permissions to AWS services / resources
+* Sample managed policies for Lambda:
+* AWS LambdaBasicExecutionRole - Upload logs to CloudWatch
+* AWS LambdaKinesisExecutionROle - Read from Kinesis
+* AWS Lambda DynamoDBExecutionRole - Read from DynamoDB Streams
+* AWS LambdaSQSQueueExecutionRole - Read from SQS
+* AWS LambdaVPCAccessExecutionRole - Deploy Lambda function in VPC
+* AWSXRayDaemonWriteAccess - Upload trace data to X-Ray
+* When you use an event source mapping to invoke your function, Lambda uses the execution role to read event data.
+* Best practice: create one Lambda Execution Role per function
+##### Lambda Resource Based Policies  
+Use resource-based policies to give other accounts and AWS services permission to use your Lambda resources
+* Similar to S3 bucket policies for S3 bucket
+* An IAM principal can acces Lambda:
+* If the IAM policy attached to the principal authorizes it (e.g. user access)
+* OR if the resource-based policy authorizes (e.g. service access)
+* When an AWS service like Amazon S3 calls your Lambda function, the resource-based policy gives it access
+
+##### Lambda Environment Variables
+* Environment variables = key / value pair in "String" form
+* Adjust the function behavior without updating code
+* The environment variables are available to your code
+* Lambda Service adds its own system environment variables as well
+* Helpful to store secrets (encrypted by KMS)
+* Secrets can be encrypted by the Lambda service key, or your own CMK
+
+##### Lambda Logging & Monitoring
+* CloudWatch Logs:
+  * AWS Lambda execution logs are stored in AWS CloudWatch Logs
+  * Make sure your AWS Lambda function has an execution role with an IAM policy that authorizes writes to CloudWatch Logs
+  * CloudWatch Metrics:
+    * AWS Lambda metrics are displayed in AWS CLoudWatch Metrics
+    * Invocations, Durations, Concurrent Executions
+    * Error count, Success Rates, Throttles
+    * Async Delivery Failures
+    * Iterator Age (Kinesis & DynamoDB Streams)
+* Lambda Tracing with X-Ray
+  * Enable in Lambda configuration (Active Tracing)
+  * Runs the X-Ray daemon for you
+  * Use AWS X-Ray SDK in Code
+  * Ensure Lambda Function has a correct IAM Execution Role
+    * The managed policy is called AWSXRayDaemonWriteAccess
+  * Environment variables to communicate with X-Ray
+    * _X_AMZN_TRACE_ID: contains the tracing header
+    * AWS_XRAY_CONTEXT_MISSING: by default, LOG_ERROR
+    * AWS_XRAY_DAEMON_ADDRESS: the X-Ray Daemon IP_ADDRESS:PORT
+##### Lambda VPCs
+By default, your Lambda function is launched outside your oen VPC (in an AWS-owned VPC)
+Therefore it cannot access resources in your VPC (RDS, ElastiCache, internal ELB...)
+* To deploy Lambda in VPC:
+  * You must define the VPC ID, the Subnets and the Security Groups
+  * Lambda will create an ENI (Elastic Network Interface) in your subnets
+  * AWSLambdaVPCAccessExecutionRole
+* Permit Lambda in VPC access internet:
+  * A Lambda function in your VPC does not have internet access
+  * Deploying a Lambda function in a public subnet does not give it internet access or a public IP
+  * Deploying a Lambda function in a private subnet gives it internet access if you have a **NAT Gateway / Instance**
+  * You can use **VPC endpoints** to privately access AWS services without a NAT
