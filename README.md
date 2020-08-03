@@ -1900,3 +1900,156 @@ If your Lambda function depends on external libraries -> *AWS X-Ray SDK, Databas
     * Remember the AWS Lambda limits
     * Use Layers where necessary
 * Avoid usign recursive code, never have a Lambda function call itself
+### AWS DynamoDB
+##### NoSQL databases
+* NoSQL databases are non-relational databases and are distributed
+* NoSQL databases include MongoDB, DynamoDB, etc.
+* NoSQL databases do not support join
+* All the data that is needed for a query is present in one row
+* NoSQL databases don't perform aggregations such as "SUM"
+* **NoSQL databases scale horizontally**
+* There's no "right or wrong" for NoSQL vs SQL, they just require to model the data differently and think about user queries differently
+##### DynamoDB Overview
+* Fully Managed, highly available with replication across 3AZ
+* NoSQL database - not a relational database
+* Scales to massive workloads, distributed database
+* Millions of requests per seconds, trillons of row, 100s of TB of storage
+* Fast and consistent in performance (low latency on retrieval)
+* Integrated with IAM for security, authorization and administration
+* Enables event driven programming with DynamoDB Streams
+* Low cost and auto scaling capabilities
+##### DynamoDB Basics
+* DynamoDB is made of **tables**
+* Each table has a **primary key** (must be decided at creation time)
+* Each table can have an infinite number of intems (= rows)
+* Each item has attributes (can be added over time - can be null)
+* Maximum size of a item is 400KB
+* Data type supported are:
+  * Scalar Types: String, Number, Binary, Boolean, Null
+  * Document Types: List, Map
+  * Set Types: String Set, Number Set, Binary Set
+##### DynamoDB - Primary Keys
+* **Option1: Partition Key only (HASH)**:
+  * Partition key must be unique for each item
+  * Partition key must be "diverse" so that the data is distributed
+  * *Example*: user_id for a users table
+* **Option 2: Partition key + Sort key**
+  * The combination must be unique
+  * Data is grouped by partition key
+  * Sort key == range key
+  * *Example*: users-game table
+    * user-id for the partition key
+    * game_id for the sort key
+##### DynamoDB - Provisioned Throughput
+* Table must have provisioned read and wirte capacity units
+  * **Read Capacity Units (RCU)**: throughput for reads
+    * **Eventually Consistent Read**: If we read fust after a write, it's possible we'll get unexpected response because of replication
+      * **One read capacity** unit represents **two eventually consistent reads per second** for an item up to **4KB**
+    * **Strongly Consistent Read**: If we read just after a write, we will get the correct data.
+      * **One read capacity** unit represents **one strongly consistent read per second** for an item up to **4KB**
+    * **By default**: DynamoDB uses Eventually Consistent Reads but *GetItem, Query & Scan* provide a "ConsistentRead" parameter you can set to True
+  * **Write Capcity Units (WCU)**: throughput for writes
+    * One write capacity unit represents **one write per second** for an item up 
+    to **1 KB** in size
+* Option to setup auto-scaling of throughput to meet demand
+* Throughput can be exceeded temporarily using "burst credit"
+* If burst credit are empty, you'll get a "provisionedThroughputException".
+* It's then advised to do an exponential back-off retry
+##### DynamoDB - Partition Internal
+* Data is divided in partitions
+* Partition keys go through a hasing algorithm to know to which partition they go to
+* To compute the muber of partitions (*Not asked on exam*):
+  * By capcity: (TOTAL RCU /3000) + (TOTAL WCU /1000)
+  * By size: Total Size / 10 GB
+  * Total Partitions = CEILING (MAX(Capacity,Size))
+* **WCU and RCU are spread evenly between partitions**
+##### DynamoDB - Throttling
+* If we exceed our RCU or WCU, we get **ProvisionedThroughputExceededExceptions**
+* Reasons:
+  * Hot keys: one partition key is being read too many times (*popular item for ex*)
+  * Hot partitions:
+  * Very large items: remember RCU and WCU depends on size of items
+* Solutions:
+  * Exponential back-off when exceptions is encountered (*already in SDK*)
+  * Distribute partition keys as much as possible
+  * If RCU issue, we can use DynamoDB Accelerator (DAX)
+
+##### DynamoDB Basic APIs
+* Writing Data
+  * **PutItem** - Writing data to DynamoDB (create data or full replace)
+    * Consume WCU
+  * **UpdateItem** - Update data in DynamoDB (partial update of attributes)
+  * **Conditional Writes**:
+    * Accept a write / update only if conditions are respected, otherwise reject
+    * Helps with concurrent access to items
+    * No performance impact
+* Deleting Data
+  * DeleteItem
+    * Delte an individual row
+    * Ability to perform a conditional delete
+  * DeleteTable
+    * Delete a whole table and all its items
+    * Much quicker deletion that calling DeleteItem on all items
+* Batching Writes
+  * **BatchWriteItem**
+    * Up to 25 PutItem and / or DeleteItem in one call
+    * Up to 16 MB of data written
+    * Up to 400 KB of data per item
+  * Batching allows you to save in latency by reducing the number of API calls done against DynamoDB
+  * Operations are done in parallel for better efficiency
+  * It's possible for part of a batch to fail, in which case we have the try the failed items (using exponential back-off algorithm)
+* Reading Data
+  * **GetItem**:
+    * Read based on Primary key
+    * Primary key = HASH or HASH-RANGE
+    * Eventually consistent read by default
+    * Option to use strongly consistent reads (more RCU - might take longer)
+    * **ProjectionExpression** can be specified to include only certain attributes
+  * **BatchGetItem**:
+    * Up to 100 items
+    * Up to 16 MB of data
+    * Items are retrieved in parallel to minimize latency
+* Query
+  * **Query** returns items based on:
+    * PartitionKey value (**must be = operator**)
+    * SortKey value (=, <, <=, >,>=, Between, Begub) - optional
+    * FilterExpression to further filter (client side filtering)
+  * Returns:
+    * Up to 1 MB of data
+    * Or number of items specified in **Limit**
+  * Able to do pagination on the results
+  * Can query table, a local secondary index, or a global secondary index
+* Scan
+  * **Scan** tge entire table and then filter out data (*inefficient*)
+  * Returns up to 1 MB of data - use pagination to keep on reading
+  * Consumes a lot of RCU
+  * Limit impact using Limit or reduce the size of the results and pause
+  * For faster performance, use **parallel scans**:
+    * Multiple instances scan multiple partitions at the same time
+    * Increases the throughput and RCU consumed
+    * Limit the impact of parallel scans just like you wuold for Scans
+  * Can use a **ProjectionExpression** + **FilterExpression** (no change to RCU)
+##### DynamoDB - Indexers
+* LSI (Local Secondary Index)
+    * Alternate range key for your table, **local to the hash key**
+    * Up to five local secondary indexes per table.
+    * The sort key consists of exactly one scalar attribute.
+    * The attribute that you choose must be a scalar String, Number, or Binary
+    * **LSI must be defined at table creation time**
+    * Uses the **WCU** and **RCU** of the **main table**
+    * No special throttling considerations
+* GSI (Global Secondary Index)
+  * To speed up queries on non-key attributes, use a Global Secondary Index
+  * GSI = partition key + optional sort keu
+  * The index is a new "table" and we can project attributes on it
+    * The partition key and sort key of the original table are always projected (KEYS_ONLY)
+    * Can specify extra ttributes to project (INCLUDE)
+    * Can use all attributes from main table (ALL)
+  * Must define RCU / WCU for the index
+  * **Possibility to add / modify GSI (not LSI)**
+  * **If the writes are throttled on the GSI, then the main table will be throttled**  
+    Even if the WCU on the main tables are fine, choose your GSI partition key carfully and assign your WCU capacity carefully!
+* **Concurrency**
+  * DynamoDB has a feature called "Conditional Update / Delete"
+  * That means that you can ensure an item hasn't changed before altering it
+  * That makes dynamoDB an optimistic locking / concurrency database
