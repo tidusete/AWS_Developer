@@ -2053,3 +2053,93 @@ If your Lambda function depends on external libraries -> *AWS X-Ray SDK, Databas
   * DynamoDB has a feature called "Conditional Update / Delete"
   * That means that you can ensure an item hasn't changed before altering it
   * That makes dynamoDB an optimistic locking / concurrency database
+##### DynamoDB - DAX  
+DAX = DynamoDB Accelerator
+* Seamless cache for DynamoDB, no application rewrite
+* Writes go through DAX to DyanmoDB
+* Micro second latency for cached reads & queries
+* Solves the Hot Key problem (too many reads)
+* 5 minutes TTL for cache by default
+* Up to 10 nodes in the cluster
+* Multi AZ (3 nodes minimum recommended for production)
+* Secure (Encryption at rest with KMS, VPC, IAM, CloudTrail...)
+##### DynamoDB - Streams
+* Changes in DynamoDB (Create, Update, Delete) can end up in a DYnamoDB Stream
+* This stream can be read by AWS Lambda & EC2 Instances, and we can then do:
+  * React to changes in real time (welcome email to new users)
+  * Analytics
+  * Create derivative tables / views
+  * Insert into ElasticSerach
+* Could implement cross region replication using Streams
+* Stream has 24 hours of data retention
+* Choose the information that will be written to the stream whenever the data in the table is modified:
+  * KEYS_ONLY only the key attributes of the modified item
+  * NEW_IMAGE the entire item as it appears after it was modified.
+  * OLD_IMAGE the entire item, as it appeared before it was modfied.
+  * NEW_AND_OLD_IMAGES Both the new and the old images of the item.
+* DynamoDB Streams ar emade of shards, just like Kinesis Data Streams
+* You don't provision shards, this is automated by AWS
+* Records are not retroactively populated in a stream after enabling it.
+##### DynamoDB - TTL (Time to Live)
+* TTL = automatically delete an item after an expiry date / time
+* TTL is provided at no extra cost, deletetions do not use WCU / RCU
+* TTL is a background task operated by the DynamoDB service itself
+* Helps reduce storage and manage the table size over time
+* Helps adhere to regulatory norms
+* TTL is enabled per row (you define a TTL cloumn, and add a date there)
+* DynamoDB Typically deletes expired items within 48 hours of expiration
+* Delted items due to TTL are also deleted in GSI / LSI
+* DynamoDB Streams can help recover expired items
+##### DynamoDB CLI - Good to Know
+* Especially DynamoDB:
+  * --projection-experssion : attributes to retrieve
+  * --filter-expression : filter results
+
+* General CLI pagination options including DynamoDB / S3:
+  * Optimization:
+    * --page-size: full dataset is still received but each API call will request less data (helps avoid timeouts)
+  * Pagination:
+    * --maxitems : max number of results returned by the CLI. Returns NextToken
+    * --starting-token : specify the last received NextToken to keep on reading
+##### DynamoDB Transactions
+* Transaction = Ability to Create / Update / Delte multiple rows in different tables at the same time
+* It's an "*all or nothing*" type of operations
+* Write Modes: Standard, Transactional
+* Read Modes: Eventual Consistency, Strong Consistency, Transactional
+* Consume 2x of WCU / RCU
+##### DynamoDB as Session State Cache  
+It's common to use DynamoDB to store session state
+* **vs ElastiCache**: 
+  * **ElastiCache is in-memory**, but **DynamoDB is serverless and scalable**
+  * Both are key/value stores
+* **vs EFS**:
+  * EFS must be attached to EC2 instances as a network drive
+* **vs EBS & Instance Store**:
+  * EBS & Instance Store can only be used for local caching, not shared caching
+* **vs S3**:
+  * S3 is higher latency, and not meant for small bojects
+##### DynamoDB Write Sharding
+* Imagine we have a voting application with two candidates, candidate A and candidate B.
+* If we use a partition key of candidate_id, we will run into partitions issues, as we only have two partitinos
+* Solution; add a suffix (usually random suffix, sometimes calculated suffix)
+##### DynamoDB Operations
+* **Table Cleanup**:
+  * Option 1: Scan + Delte -> very slow, expensive, consumes RCU & WCU
+  * Option 2: Drop Table + Recreate table -> fast, cheap, efficient
+* Copying a DynamoDB table:
+  * Option 1: Use AWS DataPipeline (uses EMR)
+  * Option 2: Create a backup and restore the backup into a new table name (can take some time)
+  * Option 3: Scan + Write -> Write own code
+##### DynamoDB - Security & Other Features
+* Security:
+  * VPC Endopoints available to acces DynamoDB without internet
+  * Access fully controlled by IAM
+  * Encryption at rest using KMS
+  * Encryption in transit using SSL /TLS
+* Backup and Restore feature available
+  * Point in time restore like RDS
+  * No performance impact
+* Global Tables
+  * Multi region, fully replicated, high performance
+* Amazon DMS can be used to migrate to DynamoDB (from Mongo, Oracle, MySQL, S3, etc...)
+* You can launch a local DynamoDB on your computer for development purposes
