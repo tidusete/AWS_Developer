@@ -2248,3 +2248,151 @@ It's common to use DynamoDB to store session state
   * Able to flush the entire cache (invalidate it) immediately
   * Clients can invalidate the cache with **header: Cache-Control: max-age=0** (with proper IAM authorization)
   * If you don't impose an InvalidateCache policy (or choose the require authorization check box in the console), any client can invalidate the API cache
+##### API Gateway - Usage Plans & API Keys
+* If u want to make an API available as an offering ($) to your customers
+* **Usage Plan:**
+  * Who can access one or more deployed API stages and methods
+  * How much and how fast they can access them
+  * Uses API keys to identify PAI clients and meter access
+  * Configure throttling limits and quota limits that are enforced on individual client
+* **API Keys**
+  * Alphanumeric string values to distribute to your customers
+  * Ex: QAIHBIihwbdeiahwbWAdihbIAwhbd
+  * Can use with usage plans to control access
+  * Throttling limits are applied to the API keys
+  * Quotas limits is the overall number of maximum requests
+* **Configure a usage plan**:
+  1. Create one or more APIs, configure the methods to require an API key, and deploy the APIs to stages.
+  2. Generate or import API keys to distribute to applicaiton developers (your customers) who will be using your API.
+  3. Create the usage plan with the desired throttle and quota limits
+  4. Associate API stages and API keys with the usage plan.
+
+  * *Callers of the API must supply an assigned API key in the x-api-key header in requests to the API*.
+##### API Gateway - Logging & Tracing
+* **CloudWatch Logs:**
+  * Enable CLoudWatch logging at the Stage level (with Log Level)
+  * Can override settings on a per API basis (ex: ERROR, DEBUG, INFO)
+  * Log contains information about request / response body
+* **X-Ray:**
+  * Enable tracing to get extra information about requests in API Gateway
+  * X-Ray API Gateway + AWS Lambda gives you the full picture
+* **CloudWatch Metrics:**
+Metrics are by stage, with possibility to enable detailed metrics.
+* **CacheHitCount & CacheMissCount**: efficiency of the cache
+* **Count**: The total number API requests in a given period.
+* **IntegrationLatency:** The time between when API Gateway relays a request to the backend and when it receives a response from the backend
+* **Latency**: The time between when API Gateway receives a request from a client and when it returns a response to the client. The latency includes the integration latency and other API Gateway overhead.
+* **4xxError** (client-side) & **5XXError** (server-side)
+* **Types of Throttling**
+  * **Account limit**
+    * API Gateway throttles requests at 10000 rps across all API
+    * Soft limit that can be increased upon request
+  * In case of throttling -> **429 Too Many Requests** (retriable error)
+  * Can set **Stage limit & Method limits** to improve performance
+  * Or you can define **Usage Plans** to throttle per customer
+* *Same as Lambda Concurreny, one API that is overloaded, can cause the other APIs to be throttled*
+* **Type of Errors**:
+  * **4xx means Client errors**
+    * 400: Bad Request
+    * 403: Access Denied, WAF filtered
+    * 429: Quota exceeded, Throttle
+  * **5xx means Server errors**
+    * 502: Bad Gateway Exception, usually for an incompatible output returned from a Lambda proxy integration backend and occasionally for out-of-order invocations due to heavy loads.
+    * 503: Service Unavailable Exception
+    * 504: Integration Failure - ex Endpoint Request Timed-out Exception **API Gateway requests time out after 29 seconds maximum**
+##### API Gateway - CORS
+* CORS must be enabled when you receive API calls from another domain.
+* The OPTIONS pre-flight request must contain the following headers:
+  * Access-Control-Allow-Methods
+  * Access-Control-Allow-Headers
+  * Access-Control-ALlow-Origin
+* CORS can be enabled through the console
+* **Important**
+  * **Integration Request - Lambda_Proxy** must activate CORS also coding the Lambda function, **not only Enable CORS on the Resource from the API Gateway**
+##### API Gateway - Authentication and Authorization
+* **IAM Permissions**
+  * Create an IAM policy authorization and attach to User / Role
+  * **Authentication = IAM | Authorization = IAM Policy**
+  * Good to provide access within AWS (EC2, Lambda, IAM users ...)
+  * Leverages "Sig v4" capability where IAM credential are in headers
+  * **Resource Policies**
+    * Similar to Lambda Resource Policy
+    * Allow for Cross Account Access (combined with IAM security)
+    * Allow for a specific source IP address
+    * Allow for a VPC Endpoint
+* **Cognito User Pools**
+  * Cognito fully manages user lifecycle, token expires automatically
+  * API gateway verifies identity automatically from AWS Cognito
+  * No custom implementation required
+  * **Authentication = Cognito User Pools | Authorization = API Gateway Methods**
+* **Lambda Authorizer - Custom Authorizers**
+  * Token-based authorizer (bearer token) - ex JWT (JSON Web Token) or Oauth
+  * A request parameter-based Lambda authorizer (headers, query string, stage var)
+  * Lambda must return an IAM policy for the user, result policy is cached
+  * **Authentication = External | Authorization = Lambda function**
+* Summary:
+  * **IAM**:
+    * Great for users / Roles already within your AWS account , + resource policy for cross account
+    * Handle authentication + authorization
+    * Leverages Signature V4
+  * **Custom Authorizer**:
+    * Great for 3rd party tokens
+    * Very flexible in terms of what IAM policy is returned
+    * Handle Authentication verification + Authorization in the Lambda function
+    * Pay per Labmda invocation, results are cached
+  * **Cognito User Pool**:
+    * You manage your own user pool (can be backed by Facebook, Google login etc...)
+    * No need to write any custom code.
+##### API Gateway - HTTP API vs REST API
+  * **HTTP APIs**
+    * low-latency, cost-effective AWS Lambda proxy, HTTP proxy APIs and private integration (no data mapping)
+    * Support OIDC and OAuth 2,0 authorization, and build-in support for CORS
+    * No usage plans and API keys
+  * **REST APIs**
+    * All features (except Native OpenID Conenct / OAuth 2.0)
+  * **WebSocket API**
+    * Two-way interactive communication between a user's browser and a server
+    * Server can push information to the client
+    * This enables stateful application use cases
+    * WebScoket APIs are often used in real-time applications such as chat applications, collaborations platforms, multiplayer games, and financial trading platforms.
+    * Works with AWS Service (Lambda, DynamoDB) or HTTP endpoints
+### AWS Serverless Application Model (SAM)
+##### AWS SAM Overview
+* SAM = Serverless Application Model
+* Framework for developing and deploying serverless applications
+* All the configuration is YAML code
+* Generate complex CLoudFormation from simple SAM YAML file
+* Supports anything from CLoudFormation: Outputs, Mappings, Parameters, Resources...
+* Only two commands to deploy to AWS
+* SAM can use CodeDeploy to deploy Lambda functions
+* SAM can help you to run Lambda, API Gateway, DyanmoDB locally
+##### AWS SAM Recipe
+* Transform Header indicates it's SAM template:
+  * ```Transform: 'AWS::Serverless-2016-10-31` ```
+* Write Code
+  * ```AWS::Serverless::Function` ```
+  * ```AWS::Serverless::Api` ```
+  * ```AWS::Serverless::SimpleTable` ```
+* Package & Deploy:
+  * aws cloudformation package / sam package
+  * aws cloudformation deploy / sam deploy
+##### SAM Policy Templates
+* List of templates to apply permissions to your Lambda Functions
+* Examples:
+  * S3ReadPolicy: Gives read only permissions to objects in S3
+  * SQS Poller Policy: Allows to poll an SQS queue
+  * DynamoDBCrudPolicy: CRUD = create read update delete
+##### SAM and CodeDeploy
+* SAM framework natively uses CodeDeploy to update Lambda functions
+* Traffic shifting feature
+* Pre and Post traffic hooks features to validate deployment (before the traffic shift starts and after it ends)
+* Easy & automated rollback using CloudWatch Alarms
+##### SAM Exam Summary
+* SAM is built on CloudFormation
+* SAM requires the **Transform** and **Resources** sections
+* Commands to know:
+  * sam build: fetch dependencies and create local deployment artifacts
+  * sam package: package and upload to Amazon S3, generate CF template
+  * sam deploy: deploy to CloudFormation
+* SAM Policy templates for easy IAM policy definition
+* SAM is integrated with CodeDeploy to do deploy to Lambda aliases
