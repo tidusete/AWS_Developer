@@ -2396,3 +2396,137 @@ Metrics are by stage, with possibility to enable detailed metrics.
   * sam deploy: deploy to CloudFormation
 * SAM Policy templates for easy IAM policy definition
 * SAM is integrated with CodeDeploy to do deploy to Lambda aliases
+### Amazon Cognito
+##### Cognito Overview
+* We want to give our users an identity so that they can interact with our application.
+* **Congito User Pools**:
+  * Sign in functionality for app users
+  * Integrate with API Gateway & Application Load Balancer
+* **Cognito Identity Pools** (**Federated Identity**):
+  * Provide AWS credentials to users so they can access AWS resources directly
+  * Integrate with Cognito User Pools as an identity provider
+* **Cognito Sync**:
+  * Sunchronize data from device to Cognito.
+  * Is deprecated and replaced by AppSync
+* **Cognito vs IAM**: "Hundreds of users", "mobile users", "authenticate with SAML"
+##### Cognito User Pools (CUP)
+* **User Features** 
+  * Create a serverless database of user for your web & mobile apps
+  * Simple login: Username (or email) / password combination
+  * Password reset
+  * Email & Phone Number Verification
+  * Multi-factor authentication (MFA)
+  * Federated Identities: users from Facebook, Google, SAML...
+  * Feature: block users if their credentials are compromised elsewhere
+  * Login sends back a JSON Web Token (JWT)
+  * Integrated with **API Gateway** and **Application Load Balancer**
+* **Lambda Triggers**:
+
+  |   User Pool Flow| Operation | Description   |
+  |---|---|---|
+  | **Authentication Events**  | Pre authentication Lambda Trigger| Custom validation to accept or deny the sign-in request  |
+  |   |  Post Authentication Lambda Trigger | Event logging for custom analytics  |
+  |   |  Pre Token Generation Lambda Trigger | Augment or supress token claims  |
+   | **Sign-up**  | Pre Sign-up Lambda Trigger   | Custom Validation to accept or deny the sign-up request  |
+  |   | Post Confirmation Lambda Trigger  | Custom welcome messages or event logging for custom analytics  |
+   |   | Migrate User Lambda Trigger   | Migrate a user from an existing user directory to user pools   |
+  |**Messages**| Custom Message Lambda Trigger  | Advanced customization and localization of messages   |
+   | **Token Creation**| Pre Token Generation Lambda Trigger   | Add or remove attributes in Id tokens  |
+
+* Hosted Authentication UI
+  * Cognito has a **hosted authentication UI** that you can add to your app to handle sign-up and sign-in workflows
+  * Using the hosted UI, you have a foundation for integration with social logins, OIDC or SAML
+  * Can customize with a **custom logo** and **custom CSS**
+##### Cognito Identity Pools (Federated Identities)
+* Overview
+  * Get identities for "users" so they obtain temporary AWS credentials
+  * Your identity pool (e.g identity source) can include:
+    * Public Providers (Login with Amazon, Facebook, Google, Apple)
+    * Users in an Amazon Cognito user pool
+    * OpenID Connect Providers & SAML Identity Providers
+    * Developer Authenticated Identities (custom login server)
+    * Cognito Identity Pools allow for unauthenticated (guest) access
+  * Users can then access aws services directly or through API Gateway
+    * The IAM policies applied to the credentials are defined in Cognito
+    * They can be customized based on the user_id fine grained control
+* IAM Roles
+  * Default IAM roles for authenticated and guest users
+  * Define rules to choose the role for each user based on the user's ID
+  * You can partition your user's access using **policy variables**
+  * IAM credentials are obtained by Cognito Identity Pools through STS
+  * The roles must have a "trust" policy of Cognito Identity Pools
+##### User Pools vs Identity Pools
+* **Cognito User Pools**:
+  * Database of users for your web and mobile application
+  * Allows to federate logins through Public Social, OIDC, SAML...
+  * Can customize the hosted UI for authentication (including the logo)]
+  * Has triggers with AWS Lambda during the authentication flow
+* **Cognito Idenity Pools**:
+  * Obtain AWS credentials for your users
+  * Users can login through Public Social, OIDC, SAML & Cognito User Pools
+  * Users can be unauthenticated (guests)
+  * Users are mapped to IAM roles & policies, can leverage policy variables
+* **CUP + CIP = manage user / password + access AWS services**
+##### Cognito Sync
+* Deprecated - use AWS AppSync now
+* Store preferences, configuration, state of app
+* Cross device synchronization (any platform - iOS, Android, etc...)
+* Offline capability (synchronization when back online)
+* Store data in datasets (up to 1MB), up to 20 datasets to synchronize
+* Push Sync: silently notify across all devices when identity data changes
+* Cognito Stream: stream data from Cognito into Kinesis
+* Cognito Events: execute Lambda functions in response to events
+
+### AWS Step Functions
+##### Overview
+* Build serverless visual workflow to orchestrate your Lambda functions
+* Represent flow as a JSON state machine
+* Features: sequence, parallel, coditions, timeouts, error handling...
+* Can also integrate with EC2, ECS, On premise servers, API Gateway
+* Maximum execution time of 1 year
+* Possibility to implement human approval feature
+* Use cases:
+  * Order fulfillment
+  * Data processing
+  * Web applications
+  * Any workflow
+##### Error Handling
+* Any state can encounter runtime erros for various reasons:
+  * State machine definition issues (for example, no matching rule in a Choice state)
+  * Task failures (for example, an exception in a Lambda function)
+  * Transient issues (for example, network partition events)
+* By default, when a state reports an error, AWS Step Functions causes the execution to fail entirely.
+* Retrying failures - Retry: IntervalSeconds, MaxAttempts, BackoffRate
+* Moving on - Catch: ErrorEquals, Next
+* Best practice is to include data in the error messages
+##### Standard vs Express
+* **Standard workflows**
+  * Max duration: 1 Year
+  * Supported execution start rate: Over 2k
+  * Supported state **transition rate**: 4k
+* **Express workflows**
+  * Max duration: 5 minutes.
+  * Supported execution start rate: Over 100k
+  * Supported state **transition rate**: Unlimited
+* The main difference:
+  * Express is for workflows that must be done quickly and have a duration of less than 5m. Stardard are for bigworkflows that must be processed in 1 year
+### AWS AppSync
+##### Overview 
+* **AppSync** is a managed service that uses **GraphQL**
+* **GraphQL** makes it easy for applications to get exactly the data they need.
+* This includes combining data from **one or more sources**
+  * NoSQL data stores, Relational databases, HTTP APIs...
+  * Integrates with DynamoDB, Aurora, Elasticsearch & others
+  * Custom sources with AWS Lambda
+* Retrieve data in **real-time with WebSocket or MQTT on WebSocket**
+* For mobile apps: local data access & data synchronization
+* It all starts with uploading one **GraphQL schema**
+* Exam question: What service use for mobile data ofline syncronization
+##### Security
+* There are four ways you can authorize applications to interact with your AWS AppSync GraphQL API:
+  * API_Key
+  * AWS_IAM: IAM users / roles / cross-account access
+  * OPENID_CONNECT: OpenID Connect provider / JSON WebToken
+  * AMAZON_COGNITO_USER_POOLS
+
+* For custom domain & HTTPS, use CloudFront in front of AppSync
