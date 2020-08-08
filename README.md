@@ -2530,3 +2530,123 @@ Metrics are by stage, with possibility to enable detailed metrics.
   * AMAZON_COGNITO_USER_POOLS
 
 * For custom domain & HTTPS, use CloudFront in front of AppSync
+### AWS Advanced Identity
+##### Security Token Service
+* Overview
+  * Allows to grant limited and temporary access to AWS resources (up to 1 hour).
+  * **AssumeRole**: Assume roles within your account or cross account
+  * **AssumeRoleWithSAML**: return credentials for users logged with SAML
+  * **AssumeRoleWithWebIdentity**
+    * Return creds for users logged with an IdP (Facebook Login, Google Login, OIDC compatible...)
+    * AWS recommends against using this, use **Cognito Identity Pools**
+  * **GetSessionToken**: for MFA, from a user on AWS account root user
+  * **GetFederationToken**: obtain temporary creds for a federated user
+  * **GetCallerIdentity**: return details about the IAM user or role used in the API call
+  * **DecodeAuthorizationMessage**: Decode error message when an AWS API is denied
+* Process to Assume a Role
+  * Define an IAM Role within your account or cross-account
+  * Define which princiapls can access this IAM Role
+  * Use AWS STS (Security Token Service) to retrieve credentials and impersonate the IAM Role you have access to (AssumeRole API)
+  * Temporary credentials can be valid between 15 minutes to 1 hour
+* STS with MFA
+  * Use GetSessionToken from STS
+  * Appropriate IAM policy using IAM Conditions
+  * aws:MultiFactorAuthPresent:true
+  * Reminder, GetSessionToken returns:
+    * Access ID
+    * Secret Key
+    * Session Token
+    * Expiration date
+##### Advanced IAM
+* Authorziation Model Evaluation of Policies, simplified:
+  1. If there's an explicit DENY, end decision and Deny
+  2. If there's an ALLOW, end decision with ALLOW
+  3. Else DENY
+  * {Insert diagram there}
+* IAM Policies & S3 Buccket Policies
+  * IAM Polcies are attached to users, roles, groups
+  * S3 Bucket Policies are attached to buckets
+  * When evaluating if an IAM Princiapl can perform an operation X on a bucket, the **union** of its assigned IAM Policies and S3 Bucket Ppolicies will be evaluated.
+* Dynamic Policies with IAM
+  * How to assign each user a /home/<user> folder in S3 bucket
+  * Leverage the special policy variable **&{aws:username}**
+* Inline vs Managed Policies
+  * AWS Managed Policy
+    * Maintained by AWS
+    * Good for power users and administrators
+    * Updated in case of new services / new APIs
+  * Customer Managed Policy
+    * Best Practice, re-usable, can be applied to many principals
+    * Version Controlled + rollback, central change management
+  * Inline
+    * Strict one-to-one relationship between policy and principal
+    * Policy is deleted if you delete the IAM principal
+##### Granting a User Permissions to Pass a Role to an AWS Service
+* To configure many AWS services, you must pass an IAM role to the serivce (this happens only once during setup)
+* The service will later assume the role and perform actions
+* Example of passing a role:
+  * To an EC2 instance
+  * To a Lambda function
+  * To an ECS task
+  * To a CodePipeline to allow it to invoke other services
+* For this, you need the IAM permission **iam:PassRole**
+* Normaly comes with iam:getRole to view the role being passed
+* Can a role be passed to any service?
+  * **No**, Roles can only be passed to what their trust allows
+  * A trust policy for the role that allows the service to assume the role
+* To pass a role:
+  * First we need to create the correct **Trust Relationship** to allow the target service to assume it.
+  *  Second have the iam:PassRole permission to pass the role on to the target service
+##### Directory services
+* **Microsfot Active Directory (AD)** // *Theory*
+  * Found on any Windows Server with AD Domain Services
+  * Database of bojects: User, Accounts, Computers, Printers, File Shares, Security Groups
+  * Centralized security management, create account, assign permissions
+  * Objects are organized in trees
+  * A group of trees is a forest
+* **AWS Managed Microsoft AD**
+  * Create your own AD in aws, manage users locally, supports MFA
+  * Establish "trust" connections with your on-premise AD
+* **AD Connector**
+  * Directory Gateway (proxy) to redirect to on-premise AD
+  * Users are managed on the on-premise AD
+* **Simple AD**
+  * AD-compatible managed direcoty on AWS
+  * Cannot be joined with on-premise AD
+### Other Services
+##### AWS SES - Simple Email Service
+* Send emails to people using:
+  * SMTP interface
+  * Or AWS SDK
+* Ability to receive email. Integrates with:
+  * S3
+  * SNS
+  * Lambda
+* Integrated with IAM for allowing to send emails
+##### Summary of Databases
+* **RDS**: Relational databases, OLTP
+  * PostgreSQL, MySQL, Oracle...
+  * Aurora + Aurora Serverless
+  * Provisioned database
+* **DynamoDB**: NoSQL DB
+  * Managed, key Value, Document
+  * Serverless
+* **ElastiCache**: In memory DB
+  * Redis / Memcached
+  * Cache capability
+* **Redshift**: OLAP - Analytic Processing
+  * Data Warehousing / Data Lake
+  * Analytics queries
+* **Neptune**: Graph Database
+* **DMS**: Database Migration Service
+* **DocumentDB**: Managed MongoDB for AWS
+##### Amazon Certificate Manager
+* To host public SSL certificates in AWS, you can:
+  * Buy your own and upload them using the CLI
+  * Have ACM provision and renew public SSL certificates for you
+* ACM loads SSL certificates on the following integrations:
+  * Load Balancers
+  * CloudFront distributions
+  * APIs on API Gateways
+* SSL certificates is overall a pain to manually manage, to ACM is great to leverage in your AWS infrastructure.
+
