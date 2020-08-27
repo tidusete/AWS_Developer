@@ -2648,5 +2648,112 @@ Metrics are by stage, with possibility to enable detailed metrics.
   * Load Balancers
   * CloudFront distributions
   * APIs on API Gateways
-* SSL certificates is overall a pain to manually manage, to ACM is great to leverage in your AWS infrastructure.
+* SSL certificates is overall a pain to manually manage, to ACM is great to leverage in your AWS infrastructure.  
 
+### AWS Security & Encryption
+##### Basic Knowledge
+* Encryption in flight (SSL)
+  * Data is encrypted before sending and decrypted after receiving
+  * SSL Certificates help with encryptions (HTTPS)
+  * Encryption in flight ensures no MITM (man in the middle attack) can happen
+* Server side encryption at rest
+  * Data is encrypted after being received by the server
+  * Data is decrypted before being sent
+  * It is stored in an encrypted form thanks to a key (usually a data key)
+  * The encryption / decryption keys must be managed somewhere and the server must have access to it
+* Client side encryption
+  * Data is encrypted by the client and never decrypted by the server
+  * Data will be decrypted by a receiving client
+  * The server should not be albe to decrypt the data
+  * Could leverage Envelope Encryption
+##### AWS KMS (Key Management Service)
+* Customer Master Key Types
+  * Symmetrica (AES-256 keys)
+    * Single encryption key that is used to **Encrypt and Decrypt**
+    * AWS services that are integrated with KMS use Symmetric CMKs
+    * Necessary for envelope encryption
+    * You never get access to the key unencrypted (must call KMS API to use)
+  * Asymmetric (RSA & ECC key pairs)
+    * Public (Encrypt) and Private Key (Decrypt) pair
+    * Used for Encrypt/Decrypt or Sign/verify operations
+    * The public key is downloadable, but you access the Private key unencrypted
+* Key Management Service
+  * Able to fully manage the keys & policies
+    * Create, rotation policies, Disable, Enable
+  * Able to audit keyu usage (using CloudTrail)
+  * Three types of Customer Master keys
+    * AWS Managed Service Default CMK: free
+    * User Keys created in KMS: $1 / month
+    * User Keys imported (must be 256 bit symmetric key): $1 / month
+  * KMS 101
+    * Never ever store your secrets in plaintext, especially in your code
+    * Encrypted secrets can be stored in the code / environment variables
+    * KMS can only help in encrypting up to 4KB of data per call
+  * KMS Key Policies
+    * Control access to KMS keys, "similar" to S3 bucket policies
+    * Difference: you cannot control access without them
+    * Default KMS Key Policy:
+      * Created if you don't provide a specific KMS key Policy
+      * Complete access to the key to the root user = entire AWS account
+      * Give access to the IAM policies to the KMS key
+    * Custom KMS Key Policy:
+      * Define users, roles that can access the KMS key
+      * Define who can administer the key
+* Envelope Encryption
+  * Anything over 4KB of data that needs to be encrypted must use the Envelope Encryption == **GenerateDataKey API**
+* KMS Limits
+  * KMS Request Quotas
+    * When you exceed a request quota, you get a **Throttling Exception**
+    * To respond, use **exponential backoff** (backoff and retry)
+    * For cryptographic operations, they share a quota
+    * This includes requests made by AWS on your behalf (ex: SSE-KMS)
+    * For GenerateDataKey, consider using DEK caching from the Encryption SDK
+    * You can request a Request Quotas increase through API or AWS support.
+  ##### SSM Parameter Store
+  * Secure storage for configuration and secrets
+  * Optional Seamless Encryption using KMS
+  * Serverless, scalable, durable, easy SDK
+  * Version tracking of configurations / secrets
+  * Configuration management using path & IAM
+  * Notifications with CloudWatch Events
+  * Integration with CloudFormation
+  * SSM Parameters Store Hierarchy
+    * /my-department/
+      * my-app/
+        * dev/
+  * Standard and advanced parameter tiers
+    * Parameters Policies (for advanced parameters)
+      * Allow to assign a TTL to a parameter (expiration date) to force updating or deleting sensitive data such as passwords
+      * Can assign multiple policies at a time
+##### AWS Secret Manager
+* Newer service, meant for storing secrets
+* Capability to force rotation of secrets every X days
+* Automate generation of secrets on rotation (uses Lambda)
+* Integration with Amazon RDS /MySQL, PostgreSQL, Aurora)
+* Secrets are encrypted using KMS
+* Mostly meant for RDS integration
+##### SSM Parameter Store vs Secrets Manager
+* **Secrets Manager** **($$$):**
+  * Automatic rotation of secrets with AWS Lambda
+  * Integration with RDS, Redshift, DocumentDB
+  * KMS encryption is mandatory
+  * Can integration with CloudFormation
+* **SSM Parameter Store** **($):**
+  * Simple API
+  * No secret rotation
+  * KMS encryption is optional
+  * Can integration with CloudFormation
+  * Can pull a Secrets Manager secret using the SSM Parameter Store API
+##### CloudWatch Logs - Encryption
+* You can encrypt CloudWatch logs with KMS keys
+* Encryption is enabled at the log group level, by associating a CMK with a log group, either when you create the log group or after it exists.
+* You cannot associate a CMK with a log group using the CloudWatch console.
+* You must use the CloudWatch Logs API:
+  * **associate-kms-key**: if the log group already exists
+  * **create-log-group**: if the log group doesn't exist yet
+##### CodeBuild Security
+* To access resources in your VPC, make sure you specify a VPC configuration for your CodeBuild
+* Secrets in CodeBuild:
+* **Don't store them as plaintext in environment varaibles**
+* Environment variables can reference parameter store parameters
+* Environment variables can reference secrets manager secrets
