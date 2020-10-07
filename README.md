@@ -6,7 +6,10 @@ Table of Contets
 [2. EC2 + ENI](#ec2--eni)  
 [3. ELB](#elastic-load-balancers)  
 [4. ASG](#auto-scaling-group)  
-3. ECS2 Storage:  EBS & EFS  
+[5. Advanced S3](#advanced-S3)  
+[6. AWS CloudFront](#aws-cloudFront)
+[7. ECs, ECR & Fargate](#ECS,ECR-Fargate) 
+[3. ECS2 Storage:  EBS & EFS  
 4. RDS + Aurora + ElastiCache  
 5. Route 53  
 6. VPC Fundamentals  
@@ -2395,7 +2398,8 @@ Metrics are by stage, with possibility to enable detailed metrics.
   * sam package: package and upload to Amazon S3, generate CF template
   * sam deploy: deploy to CloudFormation
 * SAM Policy templates for easy IAM policy definition
-* SAM is integrated with CodeDeploy to do deploy to Lambda aliases
+* SAM is integrated with CodeDeploy to do deploy to Lambda aliases  
+
 ### Amazon Cognito
 ##### Cognito Overview
 * We want to give our users an identity so that they can interact with our application.
