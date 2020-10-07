@@ -26,6 +26,8 @@ Table of Contets
 [22. Other Services](#other-services)  
 [23. AWS Security & Encryption](#aws-security--encryption)  
 
+---  
+
 ### IAM + Security
 
 #### AWS Regions
@@ -384,6 +386,8 @@ Amazon S3 automatically scales to gith request rates.
     * Adopt a Worm model
     * Lock the policy for future edits
     * Helpful for compliance and data retention
+  
+---  
 
 ### AWS CloudFront
 Content Delivery Network (CDN)
@@ -439,6 +443,8 @@ Content Delivery Network (CDN)
     * Issue a request as the person who pre-signed the URL
     * Uses the IAM key of the signing IAM principal
     * Limited lifetime
+  
+---  
 
 ### ECs, ECR & Fargate
 ###### Docker
@@ -571,6 +577,9 @@ ECR is used to store Docker Images
 * Task Placement Strategies: binpack, random, spread
 * Service Auto Scaling with target tracking, step scaling or scheduled
 * Cluster Auto Scaling through Capacity Providers
+  
+---
+  
 ### AWS Elastic Beanstalk
 ##### Overview
 * Elastic Beanstalk is a developer centric view of deploying an application on AWS
@@ -629,7 +638,8 @@ ECR is used to store Docker Images
   * Route 53 can be setup using weighted policies to redirect a little bit of traffic to the stage environment
   * Using Beanstalk, "swap URLs" when done with the environment test
  _**Faltaria ficar les fotos**_ 
----
+
+---  
 ##### Beanstalk Lifecycle Policy
 * Elastic Beanstalk can store at most 1000 aplications versions.
 * Have to remove old versions to deploy more.
@@ -711,6 +721,8 @@ Ether provide:
   * Custom Platform vs Custom Image (AMI):
     * Custom Image is to tweak an **existing** Beanstalk platform (Python, Node.js, Java)
     * Custom Platform is to create **an entirely new** Beanstalk Platform
+---  
+
 ### AWS CICD:
 ##### Technology Stack for CICD
 |  Code | Build   | Test   | Deploy   |  Provision |
@@ -923,7 +935,9 @@ CodeStar is an integrated solution that regroups: GitHub, CodeCommit, CodeBuild,
 * Ability to integrate with Cloud9 to obtain a web IDE
 * One dashboard to view all your components
 * Free service, pay only for the underlying usage of other services
-* Limited Customization
+* Limited Customization  
+---  
+
 ### AWS CloudFormation
 ##### What is CloudFormation
 CloudFormation is a declarative way of outlining your AWS Infrastrcture.
@@ -1028,6 +1042,8 @@ Resources are the core of your CloudFormation Template
 * Administrator account to create StackSets
 * Trusted accounts to create, update, delete stack instances from StackSets
 * When you update a stack set, all associated stack instances are update throughout all accounts and regions.
+  
+---  
 
 ### AWS Monitoring & Audit: CloudWatch, X-Ray and CloudTrail
 #### Monitoring in AWS
@@ -1287,6 +1303,8 @@ In that case, it's better to **decouple** your applications
   * using Kinesis: real-time streaming model
 * These services can scale independenlty from our application
 
+---  
+
 #### AWS SQS
 ##### AWS SQS - Standard Queue
 * Oldest offering (over 10 years old)
@@ -1532,6 +1550,8 @@ Let's assume 100 trucks, 5 kinesis shards, 1 SQS FIFO
   * You will have 100 Group ID
   * You can have up to 100 Consumers (due to the 100 Group ID)
   * You have up to 300 messages per second (or 3000 if using batching)
+
+---  
 
 ### AWS Serverless: Lambda
 ##### Serverless in AWS
@@ -1912,6 +1932,9 @@ If your Lambda function depends on external libraries -> *AWS X-Ray SDK, Databas
     * Remember the AWS Lambda limits
     * Use Layers where necessary
 * Avoid usign recursive code, never have a Lambda function call itself
+
+---  
+
 ### AWS DynamoDB
 ##### NoSQL databases
 * NoSQL databases are non-relational databases and are distributed
@@ -2155,6 +2178,9 @@ It's common to use DynamoDB to store session state
   * Multi region, fully replicated, high performance
 * Amazon DMS can be used to migrate to DynamoDB (from Mongo, Oracle, MySQL, S3, etc...)
 * You can launch a local DynamoDB on your computer for development purposes
+
+---  
+
 ### AWS API GATEWAY
 * AWS Lambda + API Gateway: No infrastructure to manage
 * Support for the WebScoket Protocol
@@ -2368,6 +2394,9 @@ Metrics are by stage, with possibility to enable detailed metrics.
     * This enables stateful application use cases
     * WebScoket APIs are often used in real-time applications such as chat applications, collaborations platforms, multiplayer games, and financial trading platforms.
     * Works with AWS Service (Lambda, DynamoDB) or HTTP endpoints
+
+---  
+
 ### AWS Serverless Application Model (SAM)
 ##### AWS SAM Overview
 * SAM = Serverless Application Model
@@ -2408,6 +2437,8 @@ Metrics are by stage, with possibility to enable detailed metrics.
   * sam deploy: deploy to CloudFormation
 * SAM Policy templates for easy IAM policy definition
 * SAM is integrated with CodeDeploy to do deploy to Lambda aliases  
+
+---  
 
 ### Amazon Cognito
 ##### Cognito Overview
@@ -2490,6 +2521,8 @@ Metrics are by stage, with possibility to enable detailed metrics.
 * Cognito Stream: stream data from Cognito into Kinesis
 * Cognito Events: execute Lambda functions in response to events
 
+---  
+
 ### AWS Step Functions
 ##### Overview
 * Build serverless visual workflow to orchestrate your Lambda functions
@@ -2543,6 +2576,9 @@ Metrics are by stage, with possibility to enable detailed metrics.
   * AMAZON_COGNITO_USER_POOLS
 
 * For custom domain & HTTPS, use CloudFront in front of AppSync
+
+---  
+
 ### AWS Advanced Identity
 ##### Security Token Service
 * Overview
@@ -2626,6 +2662,9 @@ Metrics are by stage, with possibility to enable detailed metrics.
 * **Simple AD**
   * AD-compatible managed direcoty on AWS
   * Cannot be joined with on-premise AD
+
+---  
+
 ### Other Services
 ##### AWS SES - Simple Email Service
 * Send emails to people using:
@@ -2662,6 +2701,8 @@ Metrics are by stage, with possibility to enable detailed metrics.
   * CloudFront distributions
   * APIs on API Gateways
 * SSL certificates is overall a pain to manually manage, to ACM is great to leverage in your AWS infrastructure.  
+
+---
 
 ### AWS Security & Encryption
 ##### Basic Knowledge
@@ -2770,3 +2811,7 @@ Metrics are by stage, with possibility to enable detailed metrics.
 * **Don't store them as plaintext in environment varaibles**
 * Environment variables can reference parameter store parameters
 * Environment variables can reference secrets manager secrets
+
+---
+
+_That's all Folks_
