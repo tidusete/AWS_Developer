@@ -16,6 +16,15 @@ Table of Contets
 [12. AWS Integration & Messaging](#aws-integration--messaging)
 [13. AWS Kinesis Overview](#aws-kinesis-overview)
 [14. AWS Serverless: Lambda](#aws-serverless-lambda)
+[15. AWS DynamoDB](#aws-dynamodb)
+[16. AWS API GATEWAY](#aws-api-gateway)
+[17. AWS Serverless Application Model (SAM)](#aws-serverless-application-model-sam)
+[18. Amazon Cognito](#amazon-cognito)
+[19. AWS Step Functions](#aws-step-functions)
+[20. AWS AppSync](#aws-appsync)
+[21. AWS Advanced Identity](#aws-advanced-identity)
+[22. Other Services](#other-services)
+[23. AWS Security & Encryption](#aws-security--encryption)
 
 [3. ECS2 Storage:  EBS & EFS  
 4. RDS + Aurora + ElastiCache  
