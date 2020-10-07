@@ -6,9 +6,17 @@ Table of Contets
 [2. EC2 + ENI](#ec2--eni)  
 [3. ELB](#elastic-load-balancers)  
 [4. ASG](#auto-scaling-group)  
-[5. Advanced S3](#advanced-S3)  
-[6. AWS CloudFront](#aws-cloudFront)
-[7. ECs, ECR & Fargate](#ECS,ECR-Fargate) 
+[5. Advanced S3](#advanced-s3)  
+[6. AWS CloudFront](#aws-cloudfront)  
+[7. ECs, ECR & Fargate](#ecs-ecr--fargate)
+[8. AWS Elastic Beanstalk](#aws-elastic-beanstalk)
+[9. AWS CICD](#aws-cicd)
+[10. AWS CloudFormation](#aws-cloudformation)
+[11. AWS Monitoring & Audit: CloudWatch, X-Ray and CloudTrail](#aws-monitoring--audit-cloudwatch-x-ray-and-cloudtrail)
+[12. AWS Integration & Messaging](#aws-integration--messaging)
+[13. AWS Kinesis Overview](#aws-kinesis-overview)
+[14. AWS Serverless: Lambda](#aws-serverless-lambda)
+
 [3. ECS2 Storage:  EBS & EFS  
 4. RDS + Aurora + ElastiCache  
 5. Route 53  
@@ -1263,7 +1271,7 @@ Policy name is **AWSXrayReadOnlyAccess**
   * Automated Trace Analysiss & Central Service Map Visualitzation
   * Latency, Errors and Fault analysis
   * Request tracking across distributed systems
-### AWS Integration & Messagin
+### AWS Integration & Messaging
 When we start deploying multiple applications, they will inevitably need to communicate with one another  
 There are two patterns of application communication:
 * Synchronous communication (Application to application)
